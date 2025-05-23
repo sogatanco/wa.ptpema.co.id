@@ -5,14 +5,19 @@
 import requests
 import time
 import threading
+import random
+import string
 
-# Daftar URL yang ingin di-curl
+# Daftar URL yang ingin di-curl (parameter s pada url kedua akan diganti dinamis)
 urls = [
     "https://mitraberita.net/",
-    "https://mitraberita.net/?s=sdgsdgsdg",
+    None,  # Placeholder untuk url dinamis
     "https://mitraberita.net/?s=aceh&post_type=post",
     "https://mitraberita.net/?s=apa+le&post_type=post"
 ]
+
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 # Fungsi untuk melakukan request ke satu url
 def curl(url):
@@ -28,8 +33,15 @@ def curl(url):
 def run_curl_perdetik():
     while True:
         threads = []
-        for _ in range(59):
-            for url in urls:
+        for _ in range(120):
+            # Buat url dinamis untuk parameter s SETIAP request (bukan per detik)
+            current_urls = [
+                urls[0],
+                f"https://mitraberita.net/?s={random_string()}",
+                urls[2],
+                urls[3]
+            ]
+            for url in current_urls:
                 t = threading.Thread(target=curl, args=(url,))
                 t.start()
                 threads.append(t)
