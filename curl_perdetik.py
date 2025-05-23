@@ -7,6 +7,8 @@ import time
 import threading
 import random
 import string
+import socks
+import socket
 
 # Daftar URL yang ingin di-curl (parameter s pada url kedua akan diganti dinamis)
 urls = [
@@ -17,10 +19,20 @@ urls = [
 def random_string(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
+# Konfigurasi requests agar lewat Tor (localhost:9050)
+def get_tor_session():
+    session = requests.Session()
+    session.proxies = {
+        'http': 'socks5h://127.0.0.1:9050',
+        'https': 'socks5h://127.0.0.1:9050'
+    }
+    return session
+
 # Fungsi untuk melakukan request ke satu url
 def curl(url):
     try:
-        response = requests.get(url, headers={
+        session = get_tor_session()
+        response = session.get(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         }, timeout=10)
         print(f"[{time.strftime('%H:%M:%S')}] {url} Status: {response.status_code}")
