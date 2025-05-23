@@ -31,7 +31,7 @@ def curl(url):
 def run_curl_perdetik():
     while True:
         threads = []
-        for _ in range(120):
+        for _ in range(60):
             # Buat url dinamis untuk parameter q SETIAP request (bukan per detik)
             current_urls = [
                 urls[0],
