@@ -8,7 +8,7 @@ proxies = {
     'https': 'socks5h://127.0.0.1:9050'
 }
 
-url = "https://ajnn.net"
+url = "https://pintoe.co/"
 
 # Fungsi untuk satu permintaan
 def curl_once(index):
