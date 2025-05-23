@@ -10,7 +10,7 @@ proxies = {
 }
 
 scraper = cloudscraper.create_scraper()
-url = "https://ajnn.net"
+url = "https://mitraberita.net/?s=sdgsdgsdg&post_type=post"
 
 def fetch(index):
     try:
