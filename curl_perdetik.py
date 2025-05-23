@@ -17,7 +17,9 @@ urls = [
 # Fungsi untuk melakukan request ke satu url
 def curl(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        }, timeout=10)
         print(f"[{time.strftime('%H:%M:%S')}] {url} Status: {response.status_code}")
     except requests.RequestException as e:
         print(f"[{time.strftime('%H:%M:%S')}] {url} Request failed: {e}")
