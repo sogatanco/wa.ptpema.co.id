@@ -6,8 +6,8 @@ def random_string(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 # IP target langsung
-ip_url = "http://123.456.78.90"
-domain_name = "harianpaparazzi.com"
+ip_url = "http://153.92.9.237"
+domain_name = "bisnisia.id"
 
 # Tambahkan query string acak seperti `?s=abc123`
 url = f"{ip_url}/?s={random_string()}"
