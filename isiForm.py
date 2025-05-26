@@ -33,7 +33,7 @@ def get_captcha_text(session, base_url, soup):
     print(f"Captcha OCR result: '{captcha_text}'")
     return captcha_text
 
-def isi_form_ajnn(name, email, address, subject, message):
+def isi_form_ajnn():
     base_url = "https://ajnn.net"  # Ganti dengan domain kamu
     session = requests.Session()
 
@@ -44,13 +44,13 @@ def isi_form_ajnn(name, email, address, subject, message):
     # 2. Jalankan OCR untuk dapatkan kode captcha otomatis
     code = get_captcha_text(session, base_url, soup)
 
-    # 3. Siapkan payload
+    # 3. Siapkan payload dengan data random
     payload = {
-        "name": name,
-        "email": email,
-        "address": address,
-        "subject": subject,
-        "message": message,
+        "name": random_text(10),
+        "email": f"{random_text(7)}@{random_text(5)}.com",
+        "address": random_text(12),
+        "subject": random_text(15),
+        "message": random_text(30),
         "code": code,
         "current": f"{base_url}/kontak.html",
         "form": "contact",
@@ -66,17 +66,24 @@ def isi_form_ajnn(name, email, address, subject, message):
 
     # 4. Kirim POST ke endpoint request.html
     url_post = f"{base_url}/request.html"
-    r = session.post(url_post, data=payload, headers=headers)
-
-    print("Status:", r.status_code)
-    print("Response:", r.text)
+    try:
+        r = session.post(url_post, data=payload, headers=headers)
+        print("Status:", r.status_code)
+        # Coba parsing JSON jika response 200
+        if r.status_code == 200:
+            try:
+                data = r.json()
+                if data.get("status") == 2:
+                    print("Berhasil:", data.get("text"))
+                else:
+                    print("Gagal:", data)
+            except Exception:
+                print("Response (bukan JSON):", r.text)
+        else:
+            print("Request error:", r.text)
+    except Exception as e:
+        print("Terjadi error saat request:", e)
 
 # Contoh penggunaan
 if __name__ == "__main__":
-    isi_form_ajnn(
-        name="ewewyw",
-        email="wahyudinlsm98@gmail.com",
-        address="Rumah budaya",
-        subject="sdhsdh",
-        message="dshsdh"
-    )
+    isi_form_ajnn()
