@@ -34,7 +34,7 @@ def get_captcha_text(session, base_url, soup):
     return captcha_text
 
 def isi_form_ajnn():
-    base_url = "https://ajnn.net"  # Ganti dengan domain kamu
+    base_url = "http://localhost:8000"  # Ganti ke alamat server lokal Anda
     session = requests.Session()
 
     # 1. Ambil halaman kontak untuk dapatkan kode captcha dan gambar captcha
@@ -69,7 +69,6 @@ def isi_form_ajnn():
     try:
         r = session.post(url_post, data=payload, headers=headers)
         print("Status:", r.status_code)
-        # Coba parsing JSON jika response 200
         if r.status_code == 200:
             try:
                 data = r.json()

