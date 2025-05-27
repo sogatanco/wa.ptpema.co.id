@@ -99,6 +99,19 @@ app.post('/send', apiKeyAuth, async (req, res) => {
     }
 });
 
+// Fungsi format tanggal sesuai permintaan
+function formatTanggal(dateStr) {
+    const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const d = new Date(dateStr);
+    const namaHari = hari[d.getDay()];
+    const tgl = String(d.getDate()).padStart(2, '0');
+    const bln = String(d.getMonth() + 1).padStart(2, '0');
+    const thn = d.getFullYear();
+    const jam = String(d.getHours()).padStart(2, '0');
+    const menit = String(d.getMinutes()).padStart(2, '0');
+    return `${namaHari}, ${tgl}/${bln}/${thn} ${jam}:${menit}`;
+}
+
 // Polling API eksternal setiap 5 menit
 async function pollAndSendMessages() {
     if (!isReady) return;
@@ -108,6 +121,8 @@ async function pollAndSendMessages() {
         // Cek jika response berbentuk objek dengan properti data
         if (result && result.success && result.data && result.data.number && result.data.message) {
             const d = result.data;
+            // Format tanggal
+            const tanggalFormatted = formatTanggal(d.created_at);
             // Format pesan sesuai permintaan
             const formattedMessage =
                 `Assalamu'alaikum Bapak/Ibu *${d.reciepint_name}*,\n\n` +
@@ -115,7 +130,7 @@ async function pollAndSendMessages() {
                 `📌 *Pengirim:* ${d.actor_name}\n` +
                 `📂 *Jenis:* ${d.entity} - ${d.type}\n` +
                 `🗒️ *Pesan:* ${d.message}\n` +
-                `📅 *Tanggal:* ${d.created_at}\n` +
+                `📅 *Tanggal:* ${tanggalFormatted}\n` +
                 `🔗 *Lihat Detail:*${d.url}\n\n` +
                 `Terima kasih.\nWassalamu'alaikum warahmatullahi wabarakatuh.\n\n` +
                 `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n` +
