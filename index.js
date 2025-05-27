@@ -118,9 +118,38 @@ function formatTanggal(dateStr) {
 async function pollAndSendMessages() {
     if (!isReady) return;
     try {
-        const response = await axios.get('https://api.ptpema.co.id/dapi/send-message/first', {
-            headers: { 'Authorization': `Bearer ${KEY_SYS}` }
-        });
+        // Coba tanpa trailing slash
+        let response;
+        try {
+            response = await axios.get(
+                'https://api.ptpema.co.id/dapi/send-message/first',
+                { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
+            );
+        } catch (err) {
+            // Jika 404, coba dengan trailing slash
+            if (err.response && err.response.status === 404) {
+                try {
+                    response = await axios.get(
+                        'https://api.ptpema.co.id/dapi/send-message/first/',
+                        { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
+                    );
+                } catch (err2) {
+                    if (err2.response) {
+                        console.error('❌ Response 404:', err2.response.status, err2.response.data);
+                    } else {
+                        console.error('❌ Error:', err2.message);
+                    }
+                    return;
+                }
+            } else {
+                if (err.response) {
+                    console.error('❌ Response error:', err.response.status, err.response.data);
+                } else {
+                    console.error('❌ Error:', err.message);
+                }
+                return;
+            }
+        }
         const result = response.data;
         // Cek jika response berbentuk objek dengan properti data
         if (result && result.success && result.data && result.data.number && result.data.message) {
