@@ -31,7 +31,7 @@ def run_50_curl_per_second():
     while True:
         threads = []
         start = time.time()
-        for i in range(60):
+        for i in range(50):
             counter += 1
             t = threading.Thread(target=run_curl, args=(counter,))
             t.start()
