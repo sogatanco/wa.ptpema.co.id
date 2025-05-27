@@ -60,6 +60,8 @@ client.initialize();
 
 const API_KEY = '1234567890abcdef'; // Ganti dengan key statis yang diinginkan
 
+const KEY_SYS = 'y6e766aa21ef5173e73d602767850bbe1f2c51af2'; // Ganti dengan API key sistem Anda
+
 // Middleware untuk autentikasi Bearer token
 function apiKeyAuth(req, res, next) {
     const authHeader = req.headers['authorization'];
@@ -116,7 +118,9 @@ function formatTanggal(dateStr) {
 async function pollAndSendMessages() {
     if (!isReady) return;
     try {
-        const response = await axios.get('https://api.ptpema.co.id/dapi/send-message/first');
+        const response = await axios.get('https://api.ptpema.co.id/dapi/send-message/first', {
+            headers: { 'Authorization': `Bearer ${KEY_SYS}` }
+        });
         const result = response.data;
         // Cek jika response berbentuk objek dengan properti data
         if (result && result.success && result.data && result.data.number && result.data.message) {
@@ -143,7 +147,8 @@ async function pollAndSendMessages() {
                 console.log(`✅ Pesan terkirim ke ${chatId}`);
                 // Update status ke API eksternal
                 try {
-                    await axios.post(`https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`);
+                    await axios.post(`https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`,{
+                        headers: { 'Authorization': `Bearer ${KEY_SYS}` }});
                     console.log(`✅ Status notifikasi ${d.id} diupdate ke API eksternal`);
                 } catch (err) {
                     console.error(`❌ Gagal update status notifikasi ${d.id}:`, err.message);
