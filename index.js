@@ -156,7 +156,7 @@ async function pollAndSendMessages() {
                 `📂 *Jenis:* ${d.entity} - ${d.type}\n` +
                 `🗒️ *Pesan:* ${d.message}\n` +
                 `📅 *Tanggal:* ${tanggalFormatted}\n` +
-                `🔗 *Lihat Detail:*${d.url}\n\n` +
+                `🔗 *Lihat Detail:* ${d.url}\n\n` +
                 `Terima kasih.\nWassalamu'alaikum warahmatullahi wabarakatuh.\n\n` +
                 `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n` +
                 `_jangan balas pesan ini, silakan bisukan jika dirasa mengganggu_`;
