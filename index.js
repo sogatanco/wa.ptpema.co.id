@@ -1,3 +1,14 @@
+// Contoh API Key dan cara penggunaan:
+// API_KEY: 1234567890abcdef
+// 
+// Contoh request menggunakan curl (Bearer):
+// curl -X POST http://localhost:3000/send \
+//   -H "Content-Type: application/json" \
+//   -H "Authorization: Bearer 1234567890abcdef" \
+//   -d '{"number":"6281234567890","message":"Halo"}'
+//
+// curl -X GET http://localhost:3000/status -H "Authorization: Bearer 1234567890abcdef"
+
 import express from 'express';
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
@@ -46,13 +57,28 @@ client.on('disconnected', () => {
 
 client.initialize();
 
+const API_KEY = '1234567890abcdef'; // Ganti dengan key statis yang diinginkan
+
+// Middleware untuk autentikasi Bearer token
+function apiKeyAuth(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: Bearer token required' });
+    }
+    const token = authHeader.split(' ')[1];
+    if (token !== API_KEY) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
+    }
+    next();
+}
+
 // Endpoint cek status
-app.get('/status', (req, res) => {
+app.get('/status', apiKeyAuth, (req, res) => {
     res.json({ ready: isReady });
 });
 
 // Endpoint kirim pesan
-app.post('/send', async (req, res) => {
+app.post('/send', apiKeyAuth, async (req, res) => {
     if (!isReady) return res.status(503).json({ error: 'WhatsApp belum siap.' });
 
     const { number, message } = req.body;

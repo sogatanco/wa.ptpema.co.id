@@ -18,10 +18,18 @@ set /a counter+=1
 call :random_string
 set "randstr=%str%"
 
-REM Jalankan curl, output biasa + status HTTP di akhir
-curl -s -L -w " HTTP_Status: %{http_code}\n" -H "Host: pge.id" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "http://103.229.73.15/?s=%randstr%"
+REM Jalankan curl, simpan output ke file sementara
+curl -s -L -w " HTTP_Status: %{http_code}\n" -H "Host: pge.id" -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "http://103.229.73.15/?s=%randstr%" > tmpcurl.txt
 
-REM Delay ~14ms (sekitar 70 req/detik)
-ping -n 1 -w 14 127.0.0.1 >nul
+REM Ambil dan echo status HTTP dari output
+for /f "tokens=2" %%s in ('findstr /c:"HTTP_Status:" tmpcurl.txt') do (
+    echo HTTP Status: %%s
+)
+
+REM Tampilkan seluruh output (opsional)
+type tmpcurl.txt
+
+REM Delay ~500ms (2 req/detik, lebih aman untuk testing)
+ping -n 1 -w 500 127.0.0.1 >nul
 
 goto loop
