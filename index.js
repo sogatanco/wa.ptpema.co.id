@@ -1,18 +1,11 @@
-// Contoh API Key dan cara penggunaan:
-// API_KEY: 1234567890abcdef
-// 
-// Contoh request menggunakan curl (Bearer):
-// curl -X POST http://localhost:3000/send \
-//   -H "Content-Type: application/json" \
-//   -H "Authorization: Bearer 1234567890abcdef" \
-//   -d '{"number":"6281234567890","message":"Halo"}'
-//
-// curl -X GET http://localhost:3000/status -H "Authorization: Bearer 1234567890abcdef"
 
 import express from 'express';
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const { Client, LocalAuth } = pkg;
 const app = express();
@@ -58,9 +51,8 @@ client.on('disconnected', () => {
 
 client.initialize();
 
-const API_KEY = '1234567890abcdef'; // Ganti dengan key statis yang diinginkan
-
-const KEY_SYS = '6e766aa21ef5173e73d602767850bbe1f2c51af2'; // Ganti dengan API key sistem Anda
+const API_KEY = process.env.API_KEY; // Dari .env
+const KEY_SYS = process.env.KEY_SYS; // Dari .env
 
 // Middleware untuk autentikasi Bearer token
 function apiKeyAuth(req, res, next) {
