@@ -99,7 +99,7 @@ app.post('/send', apiKeyAuth, async (req, res) => {
     }
 });
 
-// Polling API eksternal setiap 1 menit
+// Polling API eksternal setiap 5 menit
 async function pollAndSendMessages() {
     if (!isReady) return;
     try {
@@ -107,11 +107,24 @@ async function pollAndSendMessages() {
         const result = response.data;
         // Cek jika response berbentuk objek dengan properti data
         if (result && result.success && result.data && result.data.number && result.data.message) {
-            const { number, message } = result.data;
-            const phoneNumber = number.replace(/\D/g, '');
+            const d = result.data;
+            // Format pesan sesuai permintaan
+            const formattedMessage =
+                `Assalamu'alaikum Bapak/Ibu *${d.reciepint_name}*,\n\n` +
+                `Anda baru saja mendapat notifikasi dari sistem *SYS PT PEMA*.\n\n` +
+                `📌 *Pengirim:* ${d.actor_name}\n` +
+                `📂 *Jenis:* ${d.entity} - ${d.type}\n` +
+                `🗒️ *Pesan:* ${d.message}\n` +
+                `📅 *Tanggal:* ${d.created_at}\n` +
+                `🔗 *Lihat Detail:*${d.url}\n\n` +
+                `Terima kasih.\nWassalamu'alaikum warahmatullahi wabarakatuh.\n\n` +
+                `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n` +
+                `_jangan balas pesan ini, silakan bisukan jika dirasa mengganggu_`;
+
+            const phoneNumber = d.number.replace(/\D/g, '');
             const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
             try {
-                await client.sendMessage(chatId, message);
+                await client.sendMessage(chatId, formattedMessage);
                 console.log(`✅ Pesan terkirim ke ${chatId}`);
             } catch (err) {
                 console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
@@ -137,8 +150,8 @@ async function pollAndSendMessages() {
     }
 }
 
-// Jalankan polling setiap 1 menit
-setInterval(pollAndSendMessages, 60 * 1000);
+// Jalankan polling setiap 5 menit
+setInterval(pollAndSendMessages, 1 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
