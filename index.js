@@ -203,7 +203,7 @@ async function pollAndSendMessages() {
 }
 
 // Jalankan polling setiap 5 menit
-setInterval(pollAndSendMessages, 1 * 60 * 1000);
+setInterval(pollAndSendMessages, 2 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
