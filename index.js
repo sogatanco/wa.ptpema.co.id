@@ -158,7 +158,7 @@ async function pollAndSendMessages() {
             const tanggalFormatted = formatTanggal(d.created_at);
             // Format pesan sesuai permintaan
             const formattedMessage =
-                `Assalamu'alaikum Bapak/Ibu *${d.reciepint_name}*,\n\n` +
+                `Assalamu'alaikum ${d.panggilan} *${d.reciepint_name}*,\n\n` +
                 `Anda baru saja mendapat notifikasi dari sistem *SYS PT PEMA*.\n\n` +
                 `📌 *Pengirim:* ${d.actor_name}\n` +
                 `📂 *Jenis:* ${d.entity} - ${d.type}\n` +
