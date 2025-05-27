@@ -12,7 +12,6 @@
 import express from 'express';
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
-import axios from 'axios';
 
 const { Client, LocalAuth } = pkg;
 const app = express();
@@ -78,7 +77,7 @@ app.get('/status', apiKeyAuth, (req, res) => {
     res.json({ ready: isReady });
 });
 
-// Endpoint kirim pesan manual
+// Endpoint kirim pesan
 app.post('/send', apiKeyAuth, async (req, res) => {
     if (!isReady) return res.status(503).json({ error: 'WhatsApp belum siap.' });
 
@@ -87,7 +86,7 @@ app.post('/send', apiKeyAuth, async (req, res) => {
         return res.status(400).json({ error: 'number dan message harus diisi.' });
     }
 
-    const phoneNumber = number.replace(/\D/g, '');
+    const phoneNumber = number.replace(/\D/g, ''); // hapus karakter non-digit
     const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
 
     try {
@@ -98,47 +97,6 @@ app.post('/send', apiKeyAuth, async (req, res) => {
         res.status(500).json({ error: 'Gagal mengirim pesan', detail: err.message });
     }
 });
-
-// Polling API eksternal setiap 1 menit
-async function pollAndSendMessages() {
-    if (!isReady) return;
-    try {
-        const response = await axios.get('https://api.ptpema.co.id/dapi/send-message/first');
-        const result = response.data;
-        // Cek jika response berbentuk objek dengan properti data
-        if (result && result.success && result.data && result.data.number && result.data.message) {
-            const { number, message } = result.data;
-            const phoneNumber = number.replace(/\D/g, '');
-            const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
-            try {
-                await client.sendMessage(chatId, message);
-                console.log(`✅ Pesan terkirim ke ${chatId}`);
-            } catch (err) {
-                console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
-            }
-        }
-        // Jika response berbentuk array (untuk kompatibilitas lama)
-        else if (Array.isArray(result)) {
-            for (const item of result) {
-                if (item.number && item.message) {
-                    const phoneNumber = item.number.replace(/\D/g, '');
-                    const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
-                    try {
-                        await client.sendMessage(chatId, item.message);
-                        console.log(`✅ Pesan terkirim ke ${chatId}`);
-                    } catch (err) {
-                        console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
-                    }
-                }
-            }
-        }
-    } catch (err) {
-        console.error('❌ Gagal mengambil data dari API eksternal:', err.message);
-    }
-}
-
-// Jalankan polling setiap 1 menit
-setInterval(pollAndSendMessages, 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
