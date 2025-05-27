@@ -112,7 +112,7 @@ function formatTanggal(dateStr) {
     return `${namaHari}, ${tgl}/${bln}/${thn} ${jam}:${menit}`;
 }
 
-// Polling API eksternal setiap 5 menit
+// Polling API eksternal setiap 1 menit
 async function pollAndSendMessages() {
     if (!isReady) return;
     try {
@@ -141,6 +141,13 @@ async function pollAndSendMessages() {
             try {
                 await client.sendMessage(chatId, formattedMessage);
                 console.log(`✅ Pesan terkirim ke ${chatId}`);
+                // Update status ke API eksternal
+                try {
+                    await axios.post(`https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`);
+                    console.log(`✅ Status notifikasi ${d.id} diupdate ke API eksternal`);
+                } catch (err) {
+                    console.error(`❌ Gagal update status notifikasi ${d.id}:`, err.message);
+                }
             } catch (err) {
                 console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
             }
@@ -154,6 +161,7 @@ async function pollAndSendMessages() {
                     try {
                         await client.sendMessage(chatId, item.message);
                         console.log(`✅ Pesan terkirim ke ${chatId}`);
+                        // Tidak ada id untuk update status pada array lama
                     } catch (err) {
                         console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
                     }
