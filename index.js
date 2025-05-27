@@ -176,8 +176,11 @@ async function pollAndSendMessages() {
                 console.log(`✅ Pesan terkirim ke ${chatId}`);
                 // Update status ke API eksternal
                 try {
-                    await axios.post(`https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`,{
-                        headers: { 'Authorization': `Bearer ${KEY_SYS}` }});
+                    await axios.post(
+                        `https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`,
+                        {}, // body kosong
+                        { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
+                    );
                     console.log(`✅ Status notifikasi ${d.id} diupdate ke API eksternal`);
                 } catch (err) {
                     console.error(`❌ Gagal update status notifikasi ${d.id}:`, err.message);
