@@ -60,7 +60,7 @@ client.initialize();
 
 const API_KEY = '1234567890abcdef'; // Ganti dengan key statis yang diinginkan
 
-const KEY_SYS = 'y6e766aa21ef5173e73d602767850bbe1f2c51af2'; // Ganti dengan API key sistem Anda
+const KEY_SYS = '6e766aa21ef5173e73d602767850bbe1f2c51af2'; // Ganti dengan API key sistem Anda
 
 // Middleware untuk autentikasi Bearer token
 function apiKeyAuth(req, res, next) {
