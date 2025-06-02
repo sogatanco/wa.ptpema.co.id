@@ -3,7 +3,7 @@ import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
 
 dotenv.config();
 
