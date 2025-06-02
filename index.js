@@ -328,20 +328,30 @@ async function handleIncomingMessage(msg) {
     const text = msg.body ? msg.body.trim() : "";
 
     // Coba dengan context dulu
-    const response = await askGeminiFlash(text);
+    let response = await askGeminiFlash(text);
 
     // Jika jawaban adalah "Maaf, data tidak tersedia dalam sistem." atau terlalu pendek/generik
-    const isUnclear =
+    let isUnclear =
         !response ||
         response.trim().length < 10 ||
         /maaf, data tidak tersedia dalam sistem/i.test(response) ||
         /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
 
+    // Jika unclear, coba ulangi ke Gemini tanpa konteks
     if (isUnclear) {
-        await msg.reply("Maaf, data tidak tersedia dalam sistem.");
-    } else {
-        await msg.reply(response);
+        response = await askGeminiFlashWithoutContext(text);
+        isUnclear =
+            !response ||
+            response.trim().length < 10 ||
+            /maaf, data tidak tersedia dalam sistem/i.test(response) ||
+            /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
+        if (isUnclear) {
+            await msg.reply("Pertanyaan Anda kurang jelas atau terdapat kesalahan penulisan (typo). Mohon ajukan pertanyaan yang lebih spesifik dan benar agar saya bisa membantu.");
+            return;
+        }
     }
+
+    await msg.reply(response);
 
     // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
     if (!greetedNumbers.has(from)) {
