@@ -69,12 +69,9 @@ async function askGeminiFlash(question) {
         context = '';
     }
 
-    // Cek apakah pertanyaan ada dalam konteks (case-insensitive)
-    const questionInContext = context && context.toLowerCase().includes(question.toLowerCase());
-
-    // Jika pertanyaan ada dalam konteks, gabungkan konteks dan pertanyaan
-    const prompt = questionInContext && context
-        ? context + "\n\nBerikut pertanyaan dari pengguna: " + question
+    // Pakai konteks dan batasi jawaban hanya dari data konteks
+    const prompt = context
+        ? context + "\n\nJawablah pertanyaan berikut hanya berdasarkan data di atas. Jika jawabannya tidak ada dalam data, balas: 'Maaf, data tidak tersedia dalam sistem.'\n\nPertanyaan: " + question
         : question;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -94,7 +91,6 @@ async function askGeminiFlash(question) {
                 }
             }
         );
-        // Cek struktur response Gemini
         if (
             response.data &&
             Array.isArray(response.data.candidates) &&
@@ -104,27 +100,11 @@ async function askGeminiFlash(question) {
             response.data.candidates[0].content.parts.length > 0 &&
             response.data.candidates[0].content.parts[0].text
         ) {
-            const answer = response.data.candidates[0].content.parts[0].text;
-            // Jika prompt menggunakan context dan jawaban tidak mengandung data context, return null (jangan balas dulu)
-            if (questionInContext && context) {
-                // Cek apakah jawaban mengandung data dari context (minimal 1 kata unik dari context)
-                // Ambil kata unik dari context (panjang > 4 huruf, bukan stopword umum)
-                const contextWords = Array.from(new Set(context
-                    .replace(/[^\w\s]/g, '')
-                    .toLowerCase()
-                    .split(/\s+/)
-                    .filter(w => w.length > 4)));
-                const found = contextWords.some(word => answer.toLowerCase().includes(word));
-                if (!found) {
-                    // Jawaban tidak relevan dengan context, return null agar handler bisa memanggil ulang tanpa context
-                    return null;
-                }
-            }
-            return answer;
+            return response.data.candidates[0].content.parts[0].text;
         }
-        return null;
+        return "Maaf, data tidak tersedia dalam sistem.";
     } catch (err) {
-        return null;
+        return "Maaf, data tidak tersedia dalam sistem.";
     }
 }
 
@@ -348,21 +328,17 @@ async function handleIncomingMessage(msg) {
     const text = msg.body ? msg.body.trim() : "";
 
     // Coba dengan context dulu
-    let response = await askGeminiFlash(text);
+    const response = await askGeminiFlash(text);
 
-    // Jika response null (jawaban tidak relevan dengan context), coba ulangi tanpa context
-    if (response === null) {
-        response = await askGeminiFlashWithoutContext(text);
-    }
-
-    // Deteksi jika jawaban AI terlalu pendek atau generik
+    // Jika jawaban adalah "Maaf, data tidak tersedia dalam sistem." atau terlalu pendek/generik
     const isUnclear =
         !response ||
         response.trim().length < 10 ||
+        /maaf, data tidak tersedia dalam sistem/i.test(response) ||
         /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
 
     if (isUnclear) {
-        await msg.reply("Pertanyaan Anda kurang jelas atau tidak spesifik. Mohon ajukan pertanyaan yang lebih jelas agar saya bisa membantu.");
+        await msg.reply("Maaf, data tidak tersedia dalam sistem.");
     } else {
         await msg.reply(response);
     }
