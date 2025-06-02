@@ -259,6 +259,29 @@ async function pollAndSendMessages() {
     }
 }
 
+async function generateContextFromMysql(dbConfig, query) {
+    const pemaIntro = 'PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik.\n\n';
+    let connection;
+    try {
+        console.log('⏳ Mulai mengambil data dari MySQL untuk context.txt...');
+        connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute(query);
+        const jsonText = JSON.stringify(rows, null, 2);
+        const contextText = pemaIntro + jsonText;
+        fs.writeFileSync('./context.txt', contextText, 'utf8');
+        console.log('✅ context.txt berhasil digenerate dari MySQL');
+    } catch (err) {
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            console.error('❌ Tidak dapat terhubung ke MySQL. Pastikan service MySQL berjalan dan konfigurasi sudah benar.');
+        } else {
+            console.error('❌ Gagal generate context.txt dari MySQL:', err.message);
+        }
+    } finally {
+        if (connection) await connection.end();
+        console.log('ℹ️ Proses generate context.txt dari MySQL selesai.');
+    }
+}
+
 // Fungsi untuk menangani pesan baru dan membalas langsung
 async function handleIncomingMessage(msg) {
     const chat = await msg.getChat();
@@ -303,77 +326,6 @@ client.on('message', handleIncomingMessage);
 // Jalankan polling setiap 5 menit
 setInterval(pollAndSendMessages, 2 * 60 * 1000);
 
-const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
-    console.log(`🚀 Server jalan di port ${PORT}`);
-});
-
-server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${PORT} sudah digunakan. Silakan gunakan port lain atau matikan proses lain yang memakai port ini.`);
-        process.exit(1);
-    } else {
-        console.error('❌ Server error:', err);
-    }
-});
-
-/**
- * Mengambil data dari API, mengubah ke teks, dan menulis ke context.txt
- * @param {string} apiUrl - URL API yang mengembalikan JSON
- */
-async function generateContextFromApi(apiUrl) {
-    const pemaIntro = 'PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik.\n\n';
-    try {
-        const response = await axios.get(apiUrl);
-        // Ubah JSON ke string yang mudah dibaca (pretty print)
-        const jsonText = JSON.stringify(response.data, null, 2);
-        // Gabungkan intro dan hasil API
-        const contextText = pemaIntro + jsonText;
-        // Tulis ke context.txt (overwrite)
-        fs.writeFileSync('./context.txt', contextText, 'utf8');
-        console.log('✅ context.txt berhasil digenerate dari API');
-    } catch (err) {
-        console.error('❌ Gagal generate context.txt dari API:', err.message);
-    }
-}
-
-// Jalankan generateContextFromApi saat server pertama kali dijalankan
-const API_CONTEXT_URL = process.env.API_CONTEXT_URL; // Tambahkan ke .env, misal: https://api.ptpema.co.id/context
-if (API_CONTEXT_URL) {
-    generateContextFromApi(API_CONTEXT_URL);
-    // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromApi(API_CONTEXT_URL), 60 * 60 * 1000);
-}
-
-/**
- * Mengambil data dari MySQL, mengubah ke teks, dan menulis ke context.txt
- * @param {object} dbConfig - Konfigurasi koneksi MySQL {host, user, password, database}
- * @param {string} query - Query SQL untuk mengambil data
- */
-async function generateContextFromMysql(dbConfig, query) {
-    const pemaIntro = 'PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik.\n\n';
-    let connection;
-    try {
-        console.log('⏳ Mulai mengambil data dari MySQL untuk context.txt...');
-        connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute(query);
-        const jsonText = JSON.stringify(rows, null, 2);
-        const contextText = pemaIntro + jsonText;
-        fs.writeFileSync('./context.txt', contextText, 'utf8');
-        console.log('✅ context.txt berhasil digenerate dari MySQL');
-    } catch (err) {
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
-            console.error('❌ Tidak dapat terhubung ke MySQL. Pastikan service MySQL berjalan dan konfigurasi sudah benar.');
-        } else {
-            console.error('❌ Gagal generate context.txt dari MySQL:', err.message);
-        }
-    } finally {
-        if (connection) await connection.end();
-        console.log('ℹ️ Proses generate context.txt dari MySQL selesai.');
-    }
-}
-
-// Jalankan generateContextFromMysql saat server pertama kali dijalankan dan ulangi setiap 1 jam
 const MYSQL_CONTEXT_ENABLED = process.env.MYSQL_CONTEXT_ENABLED === 'true';
 if (MYSQL_CONTEXT_ENABLED) {
     const dbConfig = {
@@ -388,8 +340,28 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 1 * 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 1* 60 * 1000);
 }
+
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+    console.log(`🚀 Server jalan di port ${PORT}`);
+});
+
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} sudah digunakan. Silakan gunakan port lain atau matikan proses lain yang memakai port ini.`);
+        process.exit(1);
+    } else {
+        console.error('❌ Server error:', err);
+    }
+});
+
+
+
+
+// Jalankan generateContextFromMysql saat server pertama kali dijalankan dan ulangi setiap 1 jam
+
 
 /*
 Catatan tentang limit context.txt atau data konteks di prompt Gemini API:
