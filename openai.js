@@ -54,6 +54,7 @@ client.initialize();
 const API_KEY = process.env.API_KEY; // Dari .env
 const KEY_SYS = process.env.KEY_SYS; // Dari .env
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Tambahkan ke .env
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Tambahkan ke .env
 
 // State untuk melacak nomor yang sudah pernah dibalas otomatis
 const greetedNumbers = new Set();
@@ -98,6 +99,79 @@ async function askGeminiFlash(question) {
             console.error('❌ Gemini Flash API error:', err.message);
         }
         return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
+    }
+}
+
+// Fungsi untuk memanggil OpenAI API (text & image)
+async function askOpenAI(prompt) {
+    // Deteksi permintaan gambar
+    const isImageRequest = /gambar|image|buatkan gambar|generate image|create image/i.test(prompt);
+
+    if (isImageRequest) {
+        // OpenAI Image Generation (DALL·E)
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/images/generations',
+                {
+                    prompt,
+                    n: 1,
+                    size: "512x512"
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    }
+                }
+            );
+            if (
+                response.data &&
+                Array.isArray(response.data.data) &&
+                response.data.data.length > 0 &&
+                response.data.data[0].url
+            ) {
+                return response.data.data[0].url;
+            }
+            return "Maaf, saya tidak dapat membuat gambar untuk permintaan Anda.";
+        } catch (err) {
+            console.error('❌ OpenAI Image API error:', err.response?.data || err.message);
+            return "Maaf, terjadi kesalahan saat membuat gambar.";
+        }
+    } else {
+        // OpenAI Chat Completion (GPT-3.5/4)
+        try {
+            const response = await axios.post(
+                'https://api.openai.com/v1/chat/completions',
+                {
+                    model: "gpt-3.5-turbo",
+                    messages: [
+                        { role: "system", content: "Kamu adalah asisten WhatsApp PT PEMA yang ramah dan informatif." },
+                        { role: "user", content: prompt }
+                    ],
+                    max_tokens: 512,
+                    temperature: 0.7
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    }
+                }
+            );
+            if (
+                response.data &&
+                response.data.choices &&
+                response.data.choices.length > 0 &&
+                response.data.choices[0].message &&
+                response.data.choices[0].message.content
+            ) {
+                return response.data.choices[0].message.content.trim();
+            }
+            return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
+        } catch (err) {
+            console.error('❌ OpenAI Chat API error:', err.response?.data || err.message);
+            return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
+        }
     }
 }
 
@@ -256,27 +330,26 @@ async function handleIncomingMessage(msg) {
     const from = msg.from;
     const text = msg.body ? msg.body.trim() : "";
 
-    // Selalu kirim ke Gemini Flash
-    const response = await askGeminiFlash(text);
+    // Selalu kirim ke OpenAI (text/gambar)
+    const response = await askOpenAI(text);
 
-    // Deteksi jika jawaban AI terlalu pendek atau generik
-    const isUnclear =
-        !response ||
-        response.trim().length < 10 ||
-        /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
-
-    if (isUnclear) {
+    // Jika permintaan gambar, balas dengan link gambar
+    const isImageRequest = /gambar|image|buatkan gambar|generate image|create image/i.test(text);
+    if (isImageRequest && response.startsWith('http')) {
+        await msg.reply(`Berikut gambar yang dihasilkan:\n${response}`);
+    } else if (!response || response.trim().length < 10 ||
+        /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/i.test(response)) {
         await msg.reply("Pertanyaan Anda kurang jelas atau tidak spesifik. Mohon ajukan pertanyaan yang lebih jelas agar saya bisa membantu.");
     } else {
         await msg.reply(response);
     }
 
-    // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
+    // Kirim pesan perkenalan jika chat pertama
     if (!greetedNumbers.has(from)) {
         const introMsg =
             "Halo! 👋\n" +
             "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
-            "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
+            "Silakan ajukan pertanyaan atau minta dibuatkan gambar, saya akan mencoba membantu dengan AI OpenAI.\n\n" +
             "Terima kasih.";
         try {
             await msg.reply(introMsg);
