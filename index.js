@@ -100,6 +100,56 @@ async function askGeminiFlash(question) {
             // Ambil jawaban pertama
             return response.data.candidates[0].content.parts[0].text;
         }
+        // Jika tidak ada jawaban dari context, coba ulangi tanpa context
+        // (prompt hanya pertanyaan user)
+        if (context) {
+            return await askGeminiFlashWithoutContext(question);
+        }
+        return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
+    } catch (err) {
+        // Jika error dari context, coba ulangi tanpa context
+        if (context) {
+            return await askGeminiFlashWithoutContext(question);
+        }
+        if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
+            console.error('❌ Gemini Flash API error:', err.response.data.error.message);
+        } else {
+            console.error('❌ Gemini Flash API error:', err.message);
+        }
+        return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
+    }
+}
+
+// Fungsi fallback: tanya Gemini tanpa context
+async function askGeminiFlashWithoutContext(question) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    try {
+        const response = await axios.post(
+            url,
+            {
+                contents: [
+                    {
+                        parts: [{ text: question }]
+                    }
+                ]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        if (
+            response.data &&
+            Array.isArray(response.data.candidates) &&
+            response.data.candidates.length > 0 &&
+            response.data.candidates[0].content &&
+            Array.isArray(response.data.candidates[0].content.parts) &&
+            response.data.candidates[0].content.parts.length > 0 &&
+            response.data.candidates[0].content.parts[0].text
+        ) {
+            return response.data.candidates[0].content.parts[0].text;
+        }
         return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
     } catch (err) {
         if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
