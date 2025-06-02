@@ -58,8 +58,11 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Tambahkan ke .env
 // State untuk melacak nomor yang sudah pernah dibalas otomatis
 const greetedNumbers = new Set();
 
-// Fungsi untuk memanggil Gemini Flash API (mengikuti contoh curl Google)
+// Fungsi untuk memanggil Gemini Flash API (mengikuti contoh curl Google) dengan konteks PT PEMA
 async function askGeminiFlash(question) {
+    const context = "PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik. ";
+    const fullPrompt = context + "Berikut pertanyaan dari pengguna: " + question;
+
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
     try {
         const response = await axios.post(
@@ -67,7 +70,7 @@ async function askGeminiFlash(question) {
             {
                 contents: [
                     {
-                        parts: [{ text: question }]
+                        parts: [{ text: fullPrompt }]
                     }
                 ]
             },
