@@ -388,7 +388,7 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 1 * 60 * 1000);
 }
 
 /*
