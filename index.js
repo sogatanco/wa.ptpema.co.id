@@ -64,15 +64,18 @@ const greetedNumbers = new Set();
 async function askGeminiFlash(question) {
     let context = '';
     try {
-        context = fs.readFileSync('./context.txt', 'utf8').trim() + ' ';
+        context = fs.readFileSync('./context.txt', 'utf8').trim();
     } catch (e) {
         context = '';
     }
-    // Jika context kosong, langsung tanya ke Gemini tanpa context
-    if (!context) {
-        return await askGeminiFlashWithoutContext(question);
-    }
-    const fullPrompt = context + "Berikut pertanyaan dari pengguna: " + question;
+
+    // Cek apakah pertanyaan ada dalam konteks (case-insensitive)
+    const questionInContext = context && context.toLowerCase().includes(question.toLowerCase());
+
+    // Jika pertanyaan ada dalam konteks, gabungkan konteks dan pertanyaan
+    const prompt = questionInContext && context
+        ? context + "\n\nBerikut pertanyaan dari pengguna: " + question
+        : question;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
     try {
@@ -81,7 +84,7 @@ async function askGeminiFlash(question) {
             {
                 contents: [
                     {
-                        parts: [{ text: fullPrompt }]
+                        parts: [{ text: prompt }]
                     }
                 ]
             },
@@ -104,11 +107,14 @@ async function askGeminiFlash(question) {
             // Ambil jawaban pertama
             return response.data.candidates[0].content.parts[0].text;
         }
-        // Jika tidak ada jawaban dari context, ulangi tanpa context
-        return await askGeminiFlashWithoutContext(question);
+        return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
     } catch (err) {
-        // Jika error dari context, ulangi tanpa context
-        return await askGeminiFlashWithoutContext(question);
+        if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
+            console.error('❌ Gemini Flash API error:', err.response.data.error.message);
+        } else {
+            console.error('❌ Gemini Flash API error:', err.message);
+        }
+        return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
     }
 }
 
