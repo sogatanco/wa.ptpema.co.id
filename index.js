@@ -340,7 +340,7 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 1* 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60* 60 * 1000);
 }
 
 const PORT = process.env.PORT || 3000;
@@ -360,31 +360,3 @@ server.on('error', (err) => {
 
 
 
-// Jalankan generateContextFromMysql saat server pertama kali dijalankan dan ulangi setiap 1 jam
-
-
-/*
-Catatan tentang limit context.txt atau data konteks di prompt Gemini API:
-
-- Gemini Flash API (dan umumnya LLM lain) memiliki batas panjang prompt (context window).
-- Untuk Gemini 1.5 Flash, context window-nya bisa sampai 1 juta tokens, namun endpoint API publik (seperti Gemini 1.0/2.0 Flash) biasanya jauh lebih kecil.
-- Untuk Gemini 2.0 Flash (API v1beta), context window umumnya **sekitar 8.192 tokens** (sekitar 24.000-32.000 karakter, tergantung bahasa dan isi).
-- Jika file context.txt terlalu besar, prompt akan dipotong otomatis oleh model atau API akan error (misal: "prompt too long").
-- Praktis: **Usahakan context.txt tidak lebih dari 10.000 karakter** (~2.000 kata) agar aman untuk semua model dan prompt pengguna.
-- Jika perlu konteks lebih besar, ringkas atau gunakan bagian terpenting saja.
-
-Referensi: [Google Gemini API docs](https://ai.google.dev/docs/prompting_overview), [OpenAI docs](https://platform.openai.com/docs/guides/gpt).
-*/
-
-// 1. Inisialisasi WhatsApp Web client menggunakan whatsapp-web.js dengan LocalAuth.
-// 2. QR code akan muncul di terminal jika belum login, untuk proses autentikasi WhatsApp Web.
-// 3. Status client (siap/tidak) disimpan di variabel isReady.
-// 4. Ada dua endpoint REST API yang diamankan dengan Bearer token dari .env:
-//    - /status: cek status WhatsApp client
-//    - /send: kirim pesan manual ke nomor WhatsApp tertentu
-// 5. Fungsi formatTanggal untuk mengubah format tanggal dari API eksternal.
-// 6. Fungsi pollAndSendMessages:
-//    - Setiap interval (2 menit), mengambil data notifikasi dari API eksternal (dengan Bearer KEY_SYS).
-// 7. Handler pesan masuk WhatsApp
-//    - Menjawab otomatis menggunakan Gemini Flash jika pesan mengandung tanda tanya
-//    - Mengirim pesan perkenalan sekali saja untuk setiap nomor yang menghubungi
