@@ -3,7 +3,6 @@ import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 
@@ -53,41 +52,6 @@ client.initialize();
 
 const API_KEY = process.env.API_KEY; // Dari .env
 const KEY_SYS = process.env.KEY_SYS; // Dari .env
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Tambahkan ke .env
-
-// State untuk melacak nomor yang sudah pernah dibalas otomatis
-const greetedNumbers = new Set();
-
-// Fungsi untuk memanggil Gemini Flash API (mengikuti contoh curl Google)
-async function askGeminiFlash(question) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-    try {
-        const response = await axios.post(
-            url,
-            {
-                contents: [
-                    {
-                        parts: [{ text: question }]
-                    }
-                ]
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        // Ambil jawaban dari response
-        const candidates = response.data.candidates;
-        if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
-            return candidates[0].content.parts.map(p => p.text).join('\n');
-        }
-        return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
-    } catch (err) {
-        console.error('❌ Gemini Flash API error:', err.message);
-        return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
-    }
-}
 
 // Middleware untuk autentikasi Bearer token
 function apiKeyAuth(req, res, next) {
