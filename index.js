@@ -339,16 +339,20 @@ async function handleIncomingMessage(msg) {
 
     // Jika unclear, coba ulangi ke Gemini tanpa konteks
     if (isUnclear) {
-        response = await askGeminiFlashWithoutContext(text);
-        isUnclear =
-            !response ||
-            response.trim().length < 10 ||
-            /maaf, data tidak tersedia dalam sistem/i.test(response) ||
-            /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
-        if (isUnclear) {
-            await msg.reply("Pertanyaan Anda kurang jelas atau terdapat kesalahan penulisan (typo). Mohon ajukan pertanyaan yang lebih spesifik dan benar agar saya bisa membantu.");
-            return;
+        const fallbackResponse = await askGeminiFlashWithoutContext(text);
+        let isUnclearFallback =
+            !fallbackResponse ||
+            fallbackResponse.trim().length < 10 ||
+            /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
+            /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
+
+        if (isUnclearFallback) {
+            // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
+            await msg.reply(fallbackResponse);
+        } else {
+            await msg.reply(fallbackResponse);
         }
+        return;
     }
 
     await msg.reply(response);
