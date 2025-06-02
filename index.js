@@ -361,7 +361,11 @@ async function generateContextFromMysql(dbConfig, query) {
         fs.writeFileSync('./context.txt', contextText, 'utf8');
         console.log('✅ context.txt berhasil digenerate dari MySQL');
     } catch (err) {
-        console.error('❌ Gagal generate context.txt dari MySQL:', err.message);
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            console.error('❌ Tidak dapat terhubung ke MySQL. Pastikan service MySQL berjalan dan konfigurasi sudah benar.');
+        } else {
+            console.error('❌ Gagal generate context.txt dari MySQL:', err.message);
+        }
     } finally {
         if (connection) await connection.end();
     }
