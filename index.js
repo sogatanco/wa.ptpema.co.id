@@ -77,14 +77,26 @@ async function askGeminiFlash(question) {
                 }
             }
         );
-        // Ambil jawaban dari response
-        const candidates = response.data.candidates;
-        if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
-            return candidates[0].content.parts.map(p => p.text).join('\n');
+        // Cek struktur response Gemini
+        if (
+            response.data &&
+            Array.isArray(response.data.candidates) &&
+            response.data.candidates.length > 0 &&
+            response.data.candidates[0].content &&
+            Array.isArray(response.data.candidates[0].content.parts) &&
+            response.data.candidates[0].content.parts.length > 0 &&
+            response.data.candidates[0].content.parts[0].text
+        ) {
+            // Ambil jawaban pertama
+            return response.data.candidates[0].content.parts[0].text;
         }
         return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
     } catch (err) {
-        console.error('❌ Gemini Flash API error:', err.message);
+        if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
+            console.error('❌ Gemini Flash API error:', err.response.data.error.message);
+        } else {
+            console.error('❌ Gemini Flash API error:', err.message);
+        }
         return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
     }
 }
@@ -237,6 +249,40 @@ async function pollAndSendMessages() {
     }
 }
 
+// Fungsi untuk menangani pesan baru dan membalas langsung
+async function handleIncomingMessage(msg) {
+    const chat = await msg.getChat();
+    if (chat.isGroup) return;
+    const from = msg.from;
+    const text = msg.body ? msg.body.trim() : "";
+
+    // Jika pesan mengandung tanda tanya, balas dengan Gemini Flash
+    if (text.includes('?')) {
+        const response = await askGeminiFlash(text);
+        await msg.reply(response);
+        return;
+    }
+
+    // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb
+    if (!greetedNumbers.has(from)) {
+        const introMsg =
+            "Halo! 👋\n" +
+            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
+            "Silakan ajukan pertanyaan dengan mengetikkan pesan yang diakhiri tanda tanya (?).\n" +
+            "Pesan Anda akan dijawab oleh sistem AI kami.\n\n" +
+            "Terima kasih.";
+        try {
+            await msg.reply(introMsg);
+            greetedNumbers.add(from);
+        } catch (err) {
+            console.error('❌ Gagal kirim pesan perkenalan:', err.message);
+        }
+    }
+}
+
+// Pasang handler pada event message
+client.on('message', handleIncomingMessage);
+
 // Jalankan polling setiap 5 menit
 setInterval(pollAndSendMessages, 2 * 60 * 1000);
 
@@ -263,3 +309,6 @@ server.on('error', (err) => {
 // 5. Fungsi formatTanggal untuk mengubah format tanggal dari API eksternal.
 // 6. Fungsi pollAndSendMessages:
 //    - Setiap interval (2 menit), mengambil data notifikasi dari API eksternal (dengan Bearer KEY_SYS).
+// 7. Handler pesan masuk WhatsApp
+//    - Menjawab otomatis menggunakan Gemini Flash jika pesan mengandung tanda tanya
+//    - Mengirim pesan perkenalan sekali saja untuk setiap nomor yang menghubungi
