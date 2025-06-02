@@ -104,17 +104,27 @@ async function askGeminiFlash(question) {
             response.data.candidates[0].content.parts.length > 0 &&
             response.data.candidates[0].content.parts[0].text
         ) {
-            // Ambil jawaban pertama
-            return response.data.candidates[0].content.parts[0].text;
+            const answer = response.data.candidates[0].content.parts[0].text;
+            // Jika prompt menggunakan context dan jawaban tidak mengandung data context, return null (jangan balas dulu)
+            if (questionInContext && context) {
+                // Cek apakah jawaban mengandung data dari context (minimal 1 kata unik dari context)
+                // Ambil kata unik dari context (panjang > 4 huruf, bukan stopword umum)
+                const contextWords = Array.from(new Set(context
+                    .replace(/[^\w\s]/g, '')
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .filter(w => w.length > 4)));
+                const found = contextWords.some(word => answer.toLowerCase().includes(word));
+                if (!found) {
+                    // Jawaban tidak relevan dengan context, return null agar handler bisa memanggil ulang tanpa context
+                    return null;
+                }
+            }
+            return answer;
         }
-        return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
+        return null;
     } catch (err) {
-        if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
-            console.error('❌ Gemini Flash API error:', err.response.data.error.message);
-        } else {
-            console.error('❌ Gemini Flash API error:', err.message);
-        }
-        return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
+        return null;
     }
 }
 
@@ -337,8 +347,13 @@ async function handleIncomingMessage(msg) {
     const from = msg.from;
     const text = msg.body ? msg.body.trim() : "";
 
-    // Selalu kirim ke Gemini Flash
-    const response = await askGeminiFlash(text);
+    // Coba dengan context dulu
+    let response = await askGeminiFlash(text);
+
+    // Jika response null (jawaban tidak relevan dengan context), coba ulangi tanpa context
+    if (response === null) {
+        response = await askGeminiFlashWithoutContext(text);
+    }
 
     // Deteksi jika jawaban AI terlalu pendek atau generik
     const isUnclear =
