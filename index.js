@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 
+
 dotenv.config();
 
 const { Client, LocalAuth, Buttons } = pkg;
@@ -189,7 +190,7 @@ app.post('/send', apiKeyAuth, async (req, res) => {
 
 // Fungsi format tanggal sesuai permintaan
 function formatTanggal(dateStr) {
-    const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const d = new Date(dateStr);
     const namaHari = hari[d.getDay()];
     const tgl = String(d.getDate()).padStart(2, '0');
@@ -344,19 +345,20 @@ async function handleIncomingMessage(msg) {
             fallbackResponse.trim().length < 10 ||
             /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
             /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
-
-        // Tampilkan jawaban Gemini (tanpa context), apapun isinya
-        await msg.reply(fallbackResponse);
-
-        // Tambahkan button setelah fallbackResponse
         const buttons = new Buttons(
-            'Silakan pilih menu:',
-            ['Cek Saldo', 'Top Up', 'Bantuan'],
-            'Menu Utama',
-            'Pilih salah satu'
+            fallbackResponse,
+            ['Mulai Chat', 'Informasi', 'Kontak Admin'], // tombol
+            'Selamat Datang 👋',
+            'Pilih salah satu opsi di bawah:'
         );
-        await msg.reply(buttons);
 
+        if (isUnclearFallback) {
+            // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
+            await msg.reply(buttons);
+        } else {
+
+            await msg.reply(buttons);
+        }
         return;
     }
 
@@ -398,7 +400,7 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60* 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
 }
 
 const PORT = process.env.PORT || 3000;
