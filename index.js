@@ -345,15 +345,9 @@ async function handleIncomingMessage(msg) {
             fallbackResponse.trim().length < 10 ||
             /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
             /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
-
-        // Perbaiki format tombol agar selalu berupa array objek { body: '...' }
         const buttons = new Buttons(
             fallbackResponse,
-            [
-                { body: 'Mulai Chat' },
-                { body: 'Informasi' },
-                { body: 'Kontak Admin' }
-            ],
+            ['Mulai Chat', 'Informasi', 'Kontak Admin'], // tombol
             'Selamat Datang 👋',
             'Pilih salah satu opsi di bawah:'
         );
@@ -361,9 +355,10 @@ async function handleIncomingMessage(msg) {
         if (isUnclearFallback) {
             // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
             await msg.reply(buttons);
+            await msg.reply(fallbackResponse);
         } else {
-
             await msg.reply(buttons);
+            await msg.reply(fallbackResponse);
         }
         return;
     }
