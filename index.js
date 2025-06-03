@@ -5,6 +5,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
+import { Buttons } from 'whatsapp-web.js';
 
 
 dotenv.config();
@@ -346,12 +347,18 @@ async function handleIncomingMessage(msg) {
             /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
             /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
 
-        if (isUnclearFallback) {
-            // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
-            await msg.reply(fallbackResponse);
-        } else {
-            await msg.reply(fallbackResponse);
-        }
+        // Tampilkan jawaban Gemini (tanpa context), apapun isinya
+        await msg.reply(fallbackResponse);
+
+        // Tambahkan button setelah fallbackResponse
+        const buttons = new Buttons(
+            'Silakan pilih menu:',
+            ['Cek Saldo', 'Top Up', 'Bantuan'],
+            'Menu Utama',
+            'Pilih salah satu'
+        );
+        await msg.reply(buttons);
+
         return;
     }
 
