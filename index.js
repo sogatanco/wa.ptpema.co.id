@@ -5,12 +5,10 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-import { Buttons } from 'whatsapp-web.js';
-
 
 dotenv.config();
 
-const { Client, LocalAuth } = pkg;
+const { Client, LocalAuth, Buttons } = pkg;
 const app = express();
 
 app.use(express.json());
