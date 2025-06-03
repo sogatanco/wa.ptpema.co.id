@@ -345,9 +345,15 @@ async function handleIncomingMessage(msg) {
             fallbackResponse.trim().length < 10 ||
             /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
             /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
+
+        // Perbaiki format tombol agar selalu berupa array objek { body: '...' }
         const buttons = new Buttons(
             fallbackResponse,
-            ['Mulai Chat', 'Informasi', 'Kontak Admin'], // tombol
+            [
+                { body: 'Mulai Chat' },
+                { body: 'Informasi' },
+                { body: 'Kontak Admin' }
+            ],
             'Selamat Datang 👋',
             'Pilih salah satu opsi di bawah:'
         );
