@@ -10,7 +10,6 @@ import mysql from 'mysql2/promise';
 dotenv.config();
 
 const { Client, LocalAuth } = pkg;
-const { Buttons } = pkg;
 const app = express();
 
 app.use(express.json());
@@ -191,7 +190,7 @@ app.post('/send', apiKeyAuth, async (req, res) => {
 
 // Fungsi format tanggal sesuai permintaan
 function formatTanggal(dateStr) {
-    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
     const d = new Date(dateStr);
     const namaHari = hari[d.getDay()];
     const tgl = String(d.getDate()).padStart(2, '0');
@@ -362,18 +361,11 @@ async function handleIncomingMessage(msg) {
     if (!greetedNumbers.has(from)) {
         const introMsg =
             "Halo! 👋\n" +
-            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n\n" +
-            "Silakan pilih opsi di bawah ini atau ketik pertanyaan Anda:";
-
-        const buttons = new Buttons(
-            introMsg,
-            ['Tentang PEMA', 'Hubungi Admin', 'Bantuan'], // ganti sesuai kebutuhan
-            'Selamat Datang di PT PEMA',
-            'Pilih salah satu opsi:'
-        );
-
+            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
+            "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
+            "Terima kasih.";
         try {
-            await client.sendMessage(from, buttons);
+            await msg.reply(introMsg);
             greetedNumbers.add(from);
         } catch (err) {
             console.error('❌ Gagal kirim pesan perkenalan:', err.message);
@@ -401,7 +393,7 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60* 60 * 1000);
 }
 
 const PORT = process.env.PORT || 3000;
