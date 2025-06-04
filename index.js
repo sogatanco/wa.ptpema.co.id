@@ -71,7 +71,7 @@ async function askGeminiFlash(question) {
 
     // Pakai konteks dan batasi jawaban hanya dari data konteks
     const prompt = context
-        ? context + "\n\nJawablah pertanyaan berikut hanya berdasarkan data di atas. Jika jawabannya tidak ada dalam data, jawablah sesuai yang kamu tahu. Pertanyaan: " + question
+        ? context + "\n\nJawablah pertanyaan berikut hanya berdasarkan data di atas. Jika jawabannya tidak ada dalam data, balas: 'Maaf, data tidak tersedia dalam sistem.'\n\nPertanyaan: " + question
         : question;
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -331,29 +331,29 @@ async function handleIncomingMessage(msg) {
     let response = await askGeminiFlash(text);
 
     // Jika jawaban adalah "Maaf, data tidak tersedia dalam sistem." atau terlalu pendek/generik
-    // let isUnclear =
-    //     !response ||
-    //     response.trim().length < 10 ||
-    //     /maaf, data tidak tersedia dalam sistem/i.test(response) ||
-    //     /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
+    let isUnclear =
+        !response ||
+        response.trim().length < 10 ||
+        /maaf, data tidak tersedia dalam sistem/i.test(response) ||
+        /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(response.toLowerCase());
 
-    // // Jika unclear, coba ulangi ke Gemini tanpa konteks
-    // if (isUnclear) {
-    //     const fallbackResponse = await askGeminiFlashWithoutContext(text);
-    //     let isUnclearFallback =
-    //         !fallbackResponse ||
-    //         fallbackResponse.trim().length < 10 ||
-    //         /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
-    //         /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
+    // Jika unclear, coba ulangi ke Gemini tanpa konteks
+    if (isUnclear) {
+        const fallbackResponse = await askGeminiFlashWithoutContext(text);
+        let isUnclearFallback =
+            !fallbackResponse ||
+            fallbackResponse.trim().length < 10 ||
+            /maaf, data tidak tersedia dalam sistem/i.test(fallbackResponse) ||
+            /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
 
-    //     if (isUnclearFallback) {
-    //         // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
-    //         await msg.reply(fallbackResponse);
-    //     } else {
-    //         await msg.reply(fallbackResponse);
-    //     }
-    //     return;
-    // }
+        if (isUnclearFallback) {
+            // Tetap tampilkan jawaban dari Gemini (tanpa context), apapun isinya
+            await msg.reply(fallbackResponse);
+        } else {
+            await msg.reply(fallbackResponse);
+        }
+        return;
+    }
 
     await msg.reply(response);
 
