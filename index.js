@@ -327,19 +327,31 @@ async function handleIncomingMessage(msg) {
     const from = msg.from;
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
-    // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi
+    // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi tombol ya/tidak
     if (text === 'p') {
-        await msg.reply('Apakah Anda ingin melanjutkan? Balas dengan "ya" untuk konfirmasi.');
-        // Simpan state jika perlu (misal: pakai Map untuk menyimpan state per user)
+        const buttonMessage = {
+            text: 'Apakah Anda ingin melanjutkan?',
+            buttons: [
+                { type: 'reply', reply: { id: 'konfirmasi_ya', title: 'Ya' } },
+                { type: 'reply', reply: { id: 'konfirmasi_tidak', title: 'Tidak' } }
+            ],
+            header: 'Konfirmasi',
+            footer: 'Silakan pilih Ya atau Tidak'
+        };
+        await msg.reply(buttonMessage);
         return;
     }
 
-    // Fitur: jika pesan "ya" setelah "p"
-    // (Contoh sederhana, tanpa state, hanya jika pesan sebelumnya "p")
-    // Untuk produksi, gunakan Map/DB untuk menyimpan state per user
-    if (text === 'ya') {
-        await msg.reply('Terima kasih atas konfirmasi Anda. Silakan lanjutkan pertanyaan atau permintaan Anda.');
-        return;
+    // Fitur: respon tombol konfirmasi ya/tidak
+    if (msg.type === 'buttons_response') {
+        if (msg.selectedButtonId === 'konfirmasi_ya') {
+            await msg.reply('Terima kasih atas konfirmasi Anda. Silakan lanjutkan pertanyaan atau permintaan Anda.');
+            return;
+        }
+        if (msg.selectedButtonId === 'konfirmasi_tidak') {
+            await msg.reply('Baik, proses dibatalkan. Jika ingin melanjutkan, silakan kirim "p" lagi.');
+            return;
+        }
     }
 
     // Coba dengan context dulu
