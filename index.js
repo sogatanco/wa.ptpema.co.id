@@ -330,13 +330,13 @@ async function handleIncomingMessage(msg) {
     // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi tombol ya/tidak
     if (text === 'p') {
         const buttons = new Buttons(
-            'Apakah Anda ingin melanjutkan?',
+            'Apakah Anda ingin melanjutkan?', // body text
             [
                 { body: 'Ya' },
                 { body: 'Tidak' }
-            ],
-            'Konfirmasi',
-            'Silakan pilih Ya atau Tidak'
+            ], // tombol
+            'Konfirmasi', // header
+            'Silakan pilih Ya atau Tidak' // footer
         );
         await client.sendMessage(from, buttons);
         return;
@@ -376,24 +376,15 @@ async function handleIncomingMessage(msg) {
     // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
     if (!greetedNumbers.has(from)) {
         const introMsg =
-            "Halo! 👋\nSaya adalah asisten otomatis WhatsApp PT PEMA.\nSilakan pilih salah satu tombol berikut atau ketik pertanyaan Anda langsung:";
-
-        const buttonMessage = {
-            text: introMsg,
-            buttons: [
-                { type: 'reply', reply: { id: 'tentang_pema', title: 'Tentang PT PEMA' } },
-                { type: 'reply', reply: { id: 'layanan', title: 'Layanan' } },
-                { type: 'reply', reply: { id: 'kontak', title: 'Kontak' } }
-            ],
-            header: 'Selamat datang di PT PEMA',
-            footer: 'Pilih menu di bawah:'
-        };
-
+            "Halo! 👋\n" +
+            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
+            "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
+            "Terima kasih.";
         try {
-            await client.sendMessage(from, buttonMessage);
+            await msg.reply(introMsg);
             greetedNumbers.add(from);
         } catch (err) {
-            console.error('❌ Gagal kirim greeting dengan tombol:', err.message);
+            console.error('❌ Gagal kirim pesan perkenalan:', err.message);
         }
     }
 }
