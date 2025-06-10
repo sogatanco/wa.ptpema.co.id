@@ -9,7 +9,7 @@ import mysql from 'mysql2/promise';
 
 dotenv.config();
 
-const { Client, LocalAuth } = pkg;
+const { Client, LocalAuth, Buttons } = pkg;
 const app = express();
 
 app.use(express.json());
@@ -329,30 +329,19 @@ async function handleIncomingMessage(msg) {
 
     // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi tombol ya/tidak
     if (text === 'p') {
-        const buttonMessage = {
-            text: 'Apakah Anda ingin melanjutkan?',
-            buttons: [
-                { type: 'reply', reply: { id: 'konfirmasi_ya', title: 'Ya' } },
-                { type: 'reply', reply: { id: 'konfirmasi_tidak', title: 'Tidak' } }
+        const buttons = new Buttons(
+            'Apakah Anda ingin melanjutkan?',
+            [
+                { body: 'Ya' },
+                { body: 'Tidak' }
             ],
-            header: 'Konfirmasi',
-            footer: 'Silakan pilih Ya atau Tidak'
-        };
-        await msg.reply(buttonMessage);
+            'Konfirmasi',
+            'Silakan pilih Ya atau Tidak'
+        );
+        await client.sendMessage(from, buttons);
         return;
     }
 
-    // Fitur: respon tombol konfirmasi ya/tidak
-    if (msg.type === 'buttons_response') {
-        if (msg.selectedButtonId === 'konfirmasi_ya') {
-            await msg.reply('Terima kasih atas konfirmasi Anda. Silakan lanjutkan pertanyaan atau permintaan Anda.');
-            return;
-        }
-        if (msg.selectedButtonId === 'konfirmasi_tidak') {
-            await msg.reply('Baik, proses dibatalkan. Jika ingin melanjutkan, silakan kirim "p" lagi.');
-            return;
-        }
-    }
 
     // Coba dengan context dulu
     let response = await askGeminiFlash(text);
