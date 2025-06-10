@@ -325,7 +325,22 @@ async function handleIncomingMessage(msg) {
     const chat = await msg.getChat();
     if (chat.isGroup) return;
     const from = msg.from;
-    const text = msg.body ? msg.body.trim() : "";
+    const text = msg.body ? msg.body.trim().toLowerCase() : "";
+
+    // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi
+    if (text === 'p') {
+        await msg.reply('Apakah Anda ingin melanjutkan? Balas dengan "ya" untuk konfirmasi.');
+        // Simpan state jika perlu (misal: pakai Map untuk menyimpan state per user)
+        return;
+    }
+
+    // Fitur: jika pesan "ya" setelah "p"
+    // (Contoh sederhana, tanpa state, hanya jika pesan sebelumnya "p")
+    // Untuk produksi, gunakan Map/DB untuk menyimpan state per user
+    if (text === 'ya') {
+        await msg.reply('Terima kasih atas konfirmasi Anda. Silakan lanjutkan pertanyaan atau permintaan Anda.');
+        return;
+    }
 
     // Coba dengan context dulu
     let response = await askGeminiFlash(text);
