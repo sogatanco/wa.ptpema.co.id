@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 
+const { Buttons } = pkg;
 
 dotenv.config();
 
@@ -190,7 +191,7 @@ app.post('/send', apiKeyAuth, async (req, res) => {
 
 // Fungsi format tanggal sesuai permintaan
 function formatTanggal(dateStr) {
-    const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const d = new Date(dateStr);
     const namaHari = hari[d.getDay()];
     const tgl = String(d.getDate()).padStart(2, '0');
@@ -252,9 +253,9 @@ async function pollAndSendMessages() {
                 `🗒️ *Pesan:* ${d.message}\n` +
                 `📅 *Tanggal:* ${tanggalFormatted}\n` +
                 `🔗 *Lihat Detail:* ${d.url}\n\n` +
-                `Terima kasih.\nWassalamu'alaikum warahmatullahi wabarakatuh.\n\n` +
-                `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n` +
-                `_jangan balas pesan ini, silakan bisukan jika dirasa mengganggu_`;
+                `Terima kasih.\n\n` +
+                `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n\n` +
+                `—\n_Anda bisa mengajukan Pertanyaan disini, Saya akan membantu anda semampu saya dengan kecerdasan buatan (AI)_`;
 
             const phoneNumber = d.number.replace(/\D/g, '');
             const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
@@ -360,15 +361,24 @@ async function handleIncomingMessage(msg) {
     // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
     if (!greetedNumbers.has(from)) {
         const introMsg =
-            "Halo! 👋\n" +
-            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
-            "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
-            "Terima kasih.";
+            "Halo! 👋\nSaya adalah asisten otomatis WhatsApp PT PEMA.\nSilakan pilih salah satu tombol berikut atau ketik pertanyaan Anda langsung:";
+
+        const buttons = new Buttons(
+            introMsg,
+            [
+                { body: 'Tentang PT PEMA' },
+                { body: 'Layanan' },
+                { body: 'Kontak' }
+            ],
+            'Selamat datang di PT PEMA',
+            'Pilih menu di bawah:'
+        );
+
         try {
-            await msg.reply(introMsg);
+            await client.sendMessage(from, buttons);
             greetedNumbers.add(from);
         } catch (err) {
-            console.error('❌ Gagal kirim pesan perkenalan:', err.message);
+            console.error('❌ Gagal kirim greeting dengan tombol:', err.message);
         }
     }
 }
@@ -393,7 +403,7 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Jalankan sekali saat server start
     generateContextFromMysql(dbConfig, contextQuery);
     // Jalankan ulang setiap 1 jam
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60* 60 * 1000);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
 }
 
 const PORT = process.env.PORT || 3000;
