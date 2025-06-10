@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
 
-const { Buttons } = pkg;
 
 dotenv.config();
 
@@ -255,7 +254,7 @@ async function pollAndSendMessages() {
                 `🔗 *Lihat Detail:* ${d.url}\n\n` +
                 `Terima kasih.\n\n` +
                 `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n\n` +
-                `—\n_Anda bisa mengajukan Pertanyaan disini, Saya akan membantu anda semampu saya dengan kecerdasan buatan (AI)_`;
+                `\n_Anda bisa mengajukan Pertanyaan disini, Saya akan membantu anda semampu saya dengan kecerdasan buatan (AI)_`;
 
             const phoneNumber = d.number.replace(/\D/g, '');
             const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
@@ -363,19 +362,19 @@ async function handleIncomingMessage(msg) {
         const introMsg =
             "Halo! 👋\nSaya adalah asisten otomatis WhatsApp PT PEMA.\nSilakan pilih salah satu tombol berikut atau ketik pertanyaan Anda langsung:";
 
-        const buttons = new Buttons(
-            introMsg,
-            [
-                { body: 'Tentang PT PEMA' },
-                { body: 'Layanan' },
-                { body: 'Kontak' }
+        const buttonMessage = {
+            text: introMsg,
+            buttons: [
+                { type: 'reply', reply: { id: 'tentang_pema', title: 'Tentang PT PEMA' } },
+                { type: 'reply', reply: { id: 'layanan', title: 'Layanan' } },
+                { type: 'reply', reply: { id: 'kontak', title: 'Kontak' } }
             ],
-            'Selamat datang di PT PEMA',
-            'Pilih menu di bawah:'
-        );
+            header: 'Selamat datang di PT PEMA',
+            footer: 'Pilih menu di bawah:'
+        };
 
         try {
-            await client.sendMessage(from, buttons);
+            await client.sendMessage(from, buttonMessage);
             greetedNumbers.add(from);
         } catch (err) {
             console.error('❌ Gagal kirim greeting dengan tombol:', err.message);
