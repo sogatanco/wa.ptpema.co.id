@@ -2,7 +2,7 @@ import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import fs from 'fs';
 
-// Menyimpan riwayat chat per user (sederhana, memory only)
+// Menyimpan riwayat chat per user (hanya pertanyaan & jawaban terakhir)
 const chatHistory = new Map();
 
 // Ambil daftar nomor dari context.txt (sekali saat start, bisa di-refresh jika perlu)
@@ -36,9 +36,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     const chat = await msg.getChat();
     if (chat.isGroup) return;
     const from = msg.from;
-    // Pisahkan nomor saja dari msg.from (misal: 6281234567890@c.us -> 6281234567890)
     let nomor = from.replace(/@.*$/, '');
-    // Hilangkan kode negara '62' di depan jika ada, dan juga '0' di depan
     const nomorVariasi = [
         nomor,
         nomor.replace(/^62/, ''),
@@ -49,20 +47,13 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     console.log(`📥 Pesan masuk dari ${nomor}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
-    // Simpan riwayat chat user (maksimal 5 pesan terakhir)
-    let history = chatHistory.get(from) || [];
-    // Deteksi apakah pesan ini berkaitan (misal: tanya "siapa kamu", lalu "siapa yang buat")
-    // Sederhana: jika pesan sebelumnya mengandung kata tanya (siapa/apa/dimana/dll) atau pesan sekarang mengandung kata "siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang"
-    const kataTanya = /(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
-    const isRelated = history.length > 0 && (kataTanya.test(history[history.length - 1]) || kataTanya.test(text));
-    if (isRelated) {
-        history.push(text);
-        if (history.length > 5) history = history.slice(-5);
-        chatHistory.set(from, history);
-    } else {
-        history = [text];
-        chatHistory.set(from, history);
-    }
+    // Ambil history terakhir user (pertanyaan & jawaban sebelumnya)
+    let lastHistory = chatHistory.get(from) || null;
+
+    // Deteksi apakah pesan ini berkaitan dengan pertanyaan sebelumnya
+    // Berkaitan jika: ada history sebelumnya dan pertanyaan sekarang adalah kata tanya (siapa/apa/dimana/dll)
+    const kataTanya = /^(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
+    const isRelated = lastHistory && kataTanya.test(text);
 
     // Fitur: jika pesan "p", balas dengan teks saja tanpa tombol
     if (text === 'p') {
@@ -72,9 +63,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
     // Gabungkan riwayat chat sebagai konteks tambahan hanya jika berkaitan
     let fullPrompt = text;
-    if (isRelated && history.length > 1) {
-        const historyPrompt = history.slice(0, -1).map((h) => `User: ${h}`).join('\n');
-        fullPrompt = `${historyPrompt}\nUser: ${text}`;
+    if (isRelated) {
+        // Gunakan format: "User: {pertanyaan sebelumnya}\nAI: {jawaban sebelumnya}\nUser: {pertanyaan sekarang}"
+        fullPrompt = `User: ${lastHistory.question}\nAI: ${lastHistory.answer}\nUser: ${text}`;
     }
 
     // Gunakan pengecekan variasi nomor
@@ -123,6 +114,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     }
 
     await msg.reply(response);
+
+    // Simpan pertanyaan & jawaban terakhir user
+    chatHistory.set(from, { question: text, answer: response });
 
     // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
     if (!greetedNumbers.has(from)) {
