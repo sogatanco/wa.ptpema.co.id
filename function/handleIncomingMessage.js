@@ -7,19 +7,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     const from = msg.from;
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
-    // Fitur: jika pesan "p", balas dengan pertanyaan konfirmasi tombol ya/tidak
+    // Fitur: jika pesan "p", balas dengan teks saja tanpa tombol
     if (text === 'p') {
-        const { Buttons } = await import('whatsapp-web.js');
-        const buttons = new Buttons(
-            'Apakah Anda ingin melanjutkan?',
-            [
-                { body: 'Ya' },
-                { body: 'Tidak' }
-            ],
-            'Konfirmasi',
-            'Silakan pilih Ya atau Tidak'
-        );
-        await client.sendMessage(from, buttons);
+        await client.sendMessage(from, 'Apakah Anda ingin melanjutkan? Balas dengan "ya" atau "tidak".');
         return;
     }
 
