@@ -82,7 +82,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         /(kamu.*kenal.*aku|kamu.*kenal.*saya)/i.test(text)
     ) {
         fullPrompt =
-            `Cari data user yang memiliki nomor handphone "${nomor}" pada data di atas, lalu buatkan deskripsi profil yang sopan dan informatif untuk user WhatsApp ini. Jika tidak ditemukan, jawab "Maaf, data Anda tidak ditemukan di sistem."`;
+            `Cari data user yang memiliki nomor handphone "${nomor}" pada data di atas, lalu jawab siapa user tersebut berdasarkan data yang ditemukan. Jika tidak ditemukan, jawab "Maaf, data Anda tidak ditemukan di sistem."`;
     }
 
     // Modifikasi askGeminiFlash agar menerima parameter contextFile
