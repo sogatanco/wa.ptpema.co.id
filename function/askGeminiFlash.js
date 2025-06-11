@@ -1,7 +1,7 @@
 import axios from 'axios';
 import fs from 'fs';
 
-export async function askGeminiFlash(question, GEMINI_API_KEY, contextFile = 'context.txt') {
+export async function askGeminiFlash(question, GEMINI_API_KEY, contextFile) {
     let context = '';
     try {
         context = fs.readFileSync(`./${contextFile}`, 'utf8').trim();
