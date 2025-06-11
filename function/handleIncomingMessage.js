@@ -40,7 +40,7 @@ function getDetailPengirim(nomor) {
         const jsonText = context.slice(jsonStart);
         const data = JSON.parse(jsonText);
         // Normalisasi nomor: hilangkan semua awalan 0, 62, 620, 628, +62, +628, dst
-        const norm = n => n.replace(/^(\+?62|0+)/, '');
+        const norm = n => n.replace(/^(\+?\d{1,3}|0+)/, '').replace(/\D/g, '');
         const normNomor = norm(nomor);
         return data.find(item =>
             item.nomor && norm(item.nomor) === normNomor
@@ -142,7 +142,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         }
         if (detail) {
             // Buat prompt khusus untuk Gemini agar menjawab profil user dengan baik
-            const promptGemini = `Berdasarkan data berikut, buatkan deskripsi profil yang sopan dan informatif untuk user WhatsApp ini:\n\n${JSON.stringify(detail, null, 2)}\n\nTampilkan dalam format narasi singkat.`;
+            const promptGemini = `Berikut adalah data user WhatsApp:\n${JSON.stringify(detail, null, 2)}\n\nBuatkan deskripsi profil yang sopan, informatif, dan mudah dipahami berdasarkan data di atas. Jawab dalam bahasa Indonesia.`;
             const profilGemini = await askGeminiFlash(promptGemini, GEMINI_API_KEY, 'context.txt');
             await msg.reply(profilGemini);
         } else {
