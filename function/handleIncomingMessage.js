@@ -15,9 +15,18 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
     // Simpan riwayat chat user (maksimal 5 pesan terakhir)
     let history = chatHistory.get(from) || [];
-    history.push(text);
-    if (history.length > 5) history = history.slice(-5);
-    chatHistory.set(from, history);
+    // Deteksi apakah pesan ini berkaitan (misal: tanya "siapa kamu", lalu "siapa yang buat")
+    // Sederhana: jika pesan sebelumnya mengandung kata tanya (siapa/apa/dimana/dll) atau pesan sekarang mengandung kata "siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang"
+    const kataTanya = /(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
+    const isRelated = history.length > 0 && (kataTanya.test(history[history.length - 1]) || kataTanya.test(text));
+    if (isRelated) {
+        history.push(text);
+        if (history.length > 5) history = history.slice(-5);
+        chatHistory.set(from, history);
+    } else {
+        history = [text];
+        chatHistory.set(from, history);
+    }
 
     // Fitur: jika pesan "p", balas dengan teks saja tanpa tombol
     if (text === 'p') {
@@ -25,11 +34,12 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         return;
     }
 
-    // Gabungkan riwayat chat sebagai konteks tambahan
-    const historyPrompt = history.slice(0, -1).map((h, i) => `User: ${h}`).join('\n');
-    const fullPrompt = historyPrompt
-        ? `${historyPrompt}\nUser: ${text}`
-        : text;
+    // Gabungkan riwayat chat sebagai konteks tambahan hanya jika berkaitan
+    let fullPrompt = text;
+    if (isRelated && history.length > 1) {
+        const historyPrompt = history.slice(0, -1).map((h) => `User: ${h}`).join('\n');
+        fullPrompt = `${historyPrompt}\nUser: ${text}`;
+    }
 
     // Coba dengan context dulu (pakai fullPrompt)
     let response = await askGeminiFlash(fullPrompt, GEMINI_API_KEY);
