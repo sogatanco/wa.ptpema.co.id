@@ -79,6 +79,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
     // Gunakan pengecekan variasi nomor
     const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
+    console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
 
     // Pilih context file sesuai status nomor pengirim
     let contextFile = isTerdaftar ? 'context.txt' : 'context2.txt';
