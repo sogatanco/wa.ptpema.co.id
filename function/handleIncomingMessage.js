@@ -1,8 +1,25 @@
 import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
+import fs from 'fs';
 
 // Menyimpan riwayat chat per user (sederhana, memory only)
 const chatHistory = new Map();
+
+// Ambil daftar nomor dari context.txt (sekali saat start, bisa di-refresh jika perlu)
+let nomorTerdaftar = new Set();
+function loadNomorTerdaftar() {
+    try {
+        const context = fs.readFileSync('./context.txt', 'utf8');
+        const matches = context.match(/\b\d{10,16}\b/g);
+        if (matches) {
+            nomorTerdaftar = new Set(matches);
+        }
+    } catch (e) {
+        nomorTerdaftar = new Set();
+    }
+}
+loadNomorTerdaftar();
+setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 
 export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greetedNumbers }) {
     const chat = await msg.getChat();
@@ -41,8 +58,11 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         fullPrompt = `${historyPrompt}\nUser: ${text}`;
     }
 
-    // Coba dengan context dulu (pakai fullPrompt)
-    let response = await askGeminiFlash(fullPrompt, GEMINI_API_KEY);
+    // Pilih context file sesuai status nomor pengirim
+    let contextFile = nomorTerdaftar.has(nomor) ? 'context.txt' : 'context2.txt';
+
+    // Modifikasi askGeminiFlash agar menerima parameter contextFile
+    let response = await askGeminiFlash(fullPrompt, GEMINI_API_KEY, contextFile);
 
     // Jika jawaban adalah "Maaf, data tidak tersedia dalam sistem." atau terlalu pendek/generik
     let isUnclear =
