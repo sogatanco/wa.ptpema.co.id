@@ -75,8 +75,12 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     // Pilih context file sesuai status nomor pengirim
     let contextFile = isTerdaftar ? 'context.txt' : 'context2.txt';
 
-    // Jika pertanyaan tentang "siapa saya", "siapa aku", atau "who am i", tambahkan instruksi dan nomor pengirim ke prompt
-    if (/^(siapa|profil) (saya|aku)\b|who am i\b/i.test(text)) {
+    // Jika pertanyaan tentang "siapa saya", "siapa aku", "who am i", atau "kamu kenal sama aku", tambahkan instruksi dan nomor pengirim ke prompt
+    if (
+        /^(siapa|profil) (saya|aku)\b|who am i\b/i.test(text) ||
+        /(kenal|mengenal).*(saya|aku|saya?|aku?)/i.test(text) ||
+        /(kamu.*kenal.*aku|kamu.*kenal.*saya)/i.test(text)
+    ) {
         fullPrompt =
             `Cari data user yang memiliki nomor handphone "${nomor}" pada data di atas, lalu buatkan deskripsi profil yang sopan dan informatif untuk user WhatsApp ini. Jika tidak ditemukan, jawab "Maaf, data Anda tidak ditemukan di sistem."`;
     }
