@@ -36,10 +36,32 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     if (!nomorTerdaftar.has(nomor)) {
         // Jika pengirim tidak terdaftar, cek apakah dia menanyakan/meminta data nomor hp
         const mintaNomor = /\b(nomor|no\.? hp|no\.? handphone|no\.? telepon|phone|contact|kontak)\b/i;
+        // Deteksi pola "detail [nama]" atau "detail nama_karyawan"
+        const detailNama = /^detail\s+([a-zA-Z0-9_ ]+)$/i;
         if (mintaNomor.test(text) || /\b\d{10,16}\b/.test(text)) {
             await msg.reply('Maaf, Anda tidak terdaftar di sistem. Data nomor HP tidak dapat diberikan.');
             return;
         }
+        if (detailNama.test(text)) {
+            // Modifikasi prompt agar AI tidak menampilkan nomor HP/email jika user tidak terdaftar
+            // Misal: tambahkan instruksi ke prompt
+            let prompt = text + ". Jangan tampilkan nomor HP dan email jika user tidak terdaftar, tampilkan data lain saja.";
+            let response = await askGeminiFlash(prompt, GEMINI_API_KEY);
+            // Filter manual jika perlu (misal: hapus baris yang mengandung nomor/email)
+            if (response) {
+                // Hapus baris yang mengandung pola nomor HP atau email
+                response = response
+                    .split('\n')
+                    .filter(line =>
+                        !/\b\d{10,16}\b/.test(line) &&
+                        !/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/.test(line)
+                    )
+                    .join('\n');
+            }
+            await msg.reply(response || 'Data tidak ditemukan.');
+            return;
+        }
+        // ...existing code...
     }
 
     // Simpan riwayat chat user (maksimal 5 pesan terakhir)
