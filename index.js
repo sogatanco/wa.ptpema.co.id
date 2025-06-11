@@ -109,19 +109,18 @@ if (MYSQL_CONTEXT_ENABLED) {
     // Ambil semua variabel env yang diawali MYSQL_CONTEXT_QUERY dan urutkan berdasar angka di akhir (atau kosong untuk utama)
     const contextQueries = Object.entries(process.env)
         .filter(([key]) => /^MYSQL_CONTEXT_QUERY(\d*)$/.test(key))
-        .sort(([a], [b]) => {
-            // Ekstrak angka di akhir, kosong = 0 (utama)
-            const getNum = k => {
-                const m = k.match(/^MYSQL_CONTEXT_QUERY(\d*)$/);
-                return m && m[1] ? parseInt(m[1]) : 0;
-            };
-            return getNum(a) - getNum(b);
+        .map(([key, value]) => {
+            // Ekstrak angka di akhir, kosong = 1 (utama), 2, 3, dst
+            const m = key.match(/^MYSQL_CONTEXT_QUERY(\d*)$/);
+            const idx = m && m[1] ? parseInt(m[1]) : 1;
+            return { idx, value };
         })
-        .map(([key, value]) => ({ key, value }));
+        .sort((a, b) => a.idx - b.idx);
 
-    contextQueries.forEach(({ key, value }, idx) => {
-        // context.txt untuk utama (MYSQL_CONTEXT_QUERY atau MYSQL_CONTEXT_QUERY1), context2.txt dst untuk berikutnya
-        const fileName = idx === 0 ? 'context.txt' : `context${idx + 1}.txt`;
+    contextQueries.forEach(({ idx, value }) => {
+        // context.txt untuk utama (idx==1), context2.txt dst untuk berikutnya
+        const fileName = idx === 1 ? 'context.txt' : `context${idx}.txt`;
+        console.log(`🔄 Mulai generate ${fileName} dari MySQL dengan query: ${value}`);
         generateContextFromMysql(dbConfig, value, fileName);
         setInterval(() => generateContextFromMysql(dbConfig, value, fileName), 60 * 60 * 1000);
     });
