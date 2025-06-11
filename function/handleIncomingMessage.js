@@ -31,6 +31,26 @@ function loadNomorTerdaftar() {
 loadNomorTerdaftar();
 setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 
+// Fungsi untuk mencari detail pengirim dari context.txt berdasarkan nomor
+function getDetailPengirim(nomor) {
+    try {
+        const context = fs.readFileSync('./context.txt', 'utf8');
+        const jsonStart = context.indexOf('[');
+        if (jsonStart === -1) return null;
+        const jsonText = context.slice(jsonStart);
+        const data = JSON.parse(jsonText);
+        const norm = n => n.replace(/^62/, '').replace(/^0/, '');
+        return data.find(item =>
+            item.nomor && (
+                norm(item.nomor) === norm(nomor) ||
+                norm(item.nomor) === nomor
+            )
+        );
+    } catch (e) {
+        return null;
+    }
+}
+
 export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greetedNumbers }) {
     console.log(nomorTerdaftar); // Debug: tampilkan nomor terdaftar
     const chat = await msg.getChat();
@@ -109,6 +129,25 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             } catch (err) {
                 console.error('❌ Gagal kirim pesan perkenalan:', err.message);
             }
+        }
+        return;
+    }
+
+    // Cek jika user bertanya "siapa saya" atau "profil saya"
+    if (/^(siapa|profil) saya\b/.test(text)) {
+        // Cari detail pengirim dari context.txt
+        let detail = null;
+        for (const n of nomorVariasi) {
+            detail = getDetailPengirim(n);
+            if (detail) break;
+        }
+        if (detail) {
+            // Buat prompt khusus untuk Gemini agar menjawab profil user dengan baik
+            const promptGemini = `Berdasarkan data berikut, buatkan deskripsi profil yang sopan dan informatif untuk user WhatsApp ini:\n\n${JSON.stringify(detail, null, 2)}\n\nTampilkan dalam format narasi singkat.`;
+            const profilGemini = await askGeminiFlash(promptGemini, GEMINI_API_KEY, 'context.txt');
+            await msg.reply(profilGemini);
+        } else {
+            await msg.reply('Maaf, data Anda tidak ditemukan di sistem.');
         }
         return;
     }
