@@ -39,12 +39,11 @@ function getDetailPengirim(nomor) {
         if (jsonStart === -1) return null;
         const jsonText = context.slice(jsonStart);
         const data = JSON.parse(jsonText);
-        const norm = n => n.replace(/^62/, '').replace(/^0/, '');
+        // Normalisasi nomor: hilangkan semua awalan 0, 62, 620, 628, +62, +628, dst
+        const norm = n => n.replace(/^(\+?62|0+)/, '');
+        const normNomor = norm(nomor);
         return data.find(item =>
-            item.nomor && (
-                norm(item.nomor) === norm(nomor) ||
-                norm(item.nomor) === nomor
-            )
+            item.nomor && norm(item.nomor) === normNomor
         );
     } catch (e) {
         return null;
@@ -133,8 +132,8 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         return;
     }
 
-    // Cek jika user bertanya "siapa saya" atau "profil saya"
-    if (/^(siapa|profil) saya\b/.test(text)) {
+    // Cek jika user bertanya "siapa saya", "siapa aku", atau "who am i"
+    if (/^(siapa|profil) (saya|aku)\b|who am i\b/i.test(text)) {
         // Cari detail pengirim dari context.txt
         let detail = null;
         for (const n of nomorVariasi) {
