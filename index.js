@@ -1,11 +1,15 @@
 import express from 'express';
 import pkg from 'whatsapp-web.js';
 import qrcode from 'qrcode';
-import axios from 'axios';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import mysql from 'mysql2/promise';
-
+import { askGeminiFlash } from './function/askGeminiFlash.js';
+import { askGeminiFlashWithoutContext } from './function/askGeminiFlashWithoutContext.js';
+import { formatTanggal } from './function/formatTanggal.js';
+import { apiKeyAuth } from './function/apiKeyAuth.js';
+import { generateContextFromMysql } from './function/generateContextFromMysql.js';
+import { pollAndSendMessages } from './function/pollAndSendMessages.js';
 
 dotenv.config();
 
@@ -60,115 +64,13 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Tambahkan ke .env
 // State untuk melacak nomor yang sudah pernah dibalas otomatis
 const greetedNumbers = new Set();
 
-// Fungsi untuk memanggil Gemini Flash API (mengikuti contoh curl Google) dengan konteks dari file eksternal
-async function askGeminiFlash(question) {
-    let context = '';
-    try {
-        context = fs.readFileSync('./context.txt', 'utf8').trim();
-    } catch (e) {
-        context = '';
-    }
-
-    // Pakai konteks dan batasi jawaban hanya dari data konteks
-    const prompt = context
-        ? context + "\n\nJawablah pertanyaan berikut hanya berdasarkan data di atas. Jika jawabannya tidak ada dalam data, balas: 'Maaf, data tidak tersedia dalam sistem.'\n\nPertanyaan: " + question
-        : question;
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-    try {
-        const response = await axios.post(
-            url,
-            {
-                contents: [
-                    {
-                        parts: [{ text: prompt }]
-                    }
-                ]
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        if (
-            response.data &&
-            Array.isArray(response.data.candidates) &&
-            response.data.candidates.length > 0 &&
-            response.data.candidates[0].content &&
-            Array.isArray(response.data.candidates[0].content.parts) &&
-            response.data.candidates[0].content.parts.length > 0 &&
-            response.data.candidates[0].content.parts[0].text
-        ) {
-            return response.data.candidates[0].content.parts[0].text;
-        }
-        return "Maaf, data tidak tersedia dalam sistem.";
-    } catch (err) {
-        return "Maaf, data tidak tersedia dalam sistem.";
-    }
-}
-
-// Fungsi fallback: tanya Gemini tanpa context
-async function askGeminiFlashWithoutContext(question) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-    try {
-        const response = await axios.post(
-            url,
-            {
-                contents: [
-                    {
-                        parts: [{ text: question }]
-                    }
-                ]
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        if (
-            response.data &&
-            Array.isArray(response.data.candidates) &&
-            response.data.candidates.length > 0 &&
-            response.data.candidates[0].content &&
-            Array.isArray(response.data.candidates[0].content.parts) &&
-            response.data.candidates[0].content.parts.length > 0 &&
-            response.data.candidates[0].content.parts[0].text
-        ) {
-            return response.data.candidates[0].content.parts[0].text;
-        }
-        return "Maaf, saya tidak dapat menjawab pertanyaan Anda.";
-    } catch (err) {
-        if (err.response && err.response.data && err.response.data.error && err.response.data.error.message) {
-            console.error('❌ Gemini Flash API error:', err.response.data.error.message);
-        } else {
-            console.error('❌ Gemini Flash API error:', err.message);
-        }
-        return "Maaf, terjadi kesalahan saat menjawab pertanyaan Anda.";
-    }
-}
-
-// Middleware untuk autentikasi Bearer token
-function apiKeyAuth(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized: Bearer token required' });
-    }
-    const token = authHeader.split(' ')[1];
-    if (token !== API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
-    }
-    next();
-}
-
 // Endpoint cek status
-app.get('/status', apiKeyAuth, (req, res) => {
+app.get('/status', apiKeyAuth(API_KEY), (req, res) => {
     res.json({ ready: isReady });
 });
 
 // Endpoint kirim pesan manual
-app.post('/send', apiKeyAuth, async (req, res) => {
+app.post('/send', apiKeyAuth(API_KEY), async (req, res) => {
     if (!isReady) return res.status(503).json({ error: 'WhatsApp belum siap.' });
 
     const { number, message } = req.body;
@@ -188,136 +90,21 @@ app.post('/send', apiKeyAuth, async (req, res) => {
     }
 });
 
-// Fungsi format tanggal sesuai permintaan
-function formatTanggal(dateStr) {
-    const hari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const d = new Date(dateStr);
-    const namaHari = hari[d.getDay()];
-    const tgl = String(d.getDate()).padStart(2, '0');
-    const bln = String(d.getMonth() + 1).padStart(2, '0');
-    const thn = d.getFullYear();
-    const jam = String(d.getHours()).padStart(2, '0');
-    const menit = String(d.getMinutes()).padStart(2, '0');
-    return `${namaHari}, ${tgl}/${bln}/${thn} ${jam}:${menit}`;
-}
-
 // Polling API eksternal setiap 1 menit
-async function pollAndSendMessages() {
-    if (!isReady) return;
-    try {
-        // Coba tanpa trailing slash
-        let response;
-        try {
-            response = await axios.get(
-                'https://api.ptpema.co.id/dapi/send-message/first',
-                { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
-            );
-        } catch (err) {
-            // Jika 404, coba dengan trailing slash
-            if (err.response && err.response.status === 404) {
-                try {
-                    response = await axios.get(
-                        'https://api.ptpema.co.id/dapi/send-message/first/',
-                        { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
-                    );
-                } catch (err2) {
-                    if (err2.response) {
-                        console.error('❌ Response 404:', err2.response.status, err2.response.data);
-                    } else {
-                        console.error('❌ Error:', err2.message);
-                    }
-                    return;
-                }
-            } else {
-                if (err.response) {
-                    console.error('❌ Response error:', err.response.status, err.response.data);
-                } else {
-                    console.error('❌ Error:', err.message);
-                }
-                return;
-            }
-        }
-        const result = response.data;
-        // Cek jika response berbentuk objek dengan properti data
-        if (result && result.success && result.data && result.data.number && result.data.message) {
-            const d = result.data;
-            // Format tanggal
-            const tanggalFormatted = formatTanggal(d.created_at);
-            // Format pesan sesuai permintaan
-            const formattedMessage =
-                `Assalamu'alaikum ${d.panggilan} *${d.reciepint_name}*,\n\n` +
-                `Anda baru saja mendapat notifikasi dari sistem *SYS PT PEMA*.\n\n` +
-                `📌 *Pengirim:* ${d.actor_name}\n` +
-                `📂 *Jenis:* ${d.entity} - ${d.type}\n` +
-                `🗒️ *Pesan:* ${d.message}\n` +
-                `📅 *Tanggal:* ${tanggalFormatted}\n` +
-                `🔗 *Lihat Detail:* ${d.url}\n\n` +
-                `Terima kasih.\n\n` +
-                `—\n_pesan ini dikirim otomatis oleh sistem SYS PT PEMA_\n\n` +
-                `\n_Anda bisa mengajukan Pertanyaan disini, Saya akan membantu anda semampu saya dengan kecerdasan buatan (AI)_`;
+setInterval(() => pollAndSendMessages(isReady, KEY_SYS, formatTanggal, client), 2 * 60 * 1000);
 
-            const phoneNumber = d.number.replace(/\D/g, '');
-            const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
-            try {
-                await client.sendMessage(chatId, formattedMessage);
-                console.log(`✅ Pesan terkirim ke ${chatId}`);
-                // Update status ke API eksternal
-                try {
-                    await axios.post(
-                        `https://api.ptpema.co.id/dapi/notif/${d.id}/set-swa`,
-                        {}, // body kosong
-                        { headers: { 'Authorization': `Bearer ${KEY_SYS}` } }
-                    );
-                    console.log(`✅ Status notifikasi ${d.id} diupdate ke API eksternal`);
-                } catch (err) {
-                    console.error(`❌ Gagal update status notifikasi ${d.id}:`, err.message);
-                }
-            } catch (err) {
-                console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
-            }
-        }
-        // Jika response berbentuk array (untuk kompatibilitas lama)
-        else if (Array.isArray(result)) {
-            for (const item of result) {
-                if (item.number && item.message) {
-                    const phoneNumber = item.number.replace(/\D/g, '');
-                    const chatId = phoneNumber.includes('@c.us') ? phoneNumber : `${phoneNumber}@c.us`;
-                    try {
-                        await client.sendMessage(chatId, item.message);
-                        console.log(`✅ Pesan terkirim ke ${chatId}`);
-                        // Tidak ada id untuk update status pada array lama
-                    } catch (err) {
-                        console.error(`❌ Gagal kirim pesan ke ${chatId}:`, err.message);
-                    }
-                }
-            }
-        }
-    } catch (err) {
-        console.error('❌ Gagal mengambil data dari API eksternal:', err.message);
-    }
-}
-
-async function generateContextFromMysql(dbConfig, query) {
-    const pemaIntro = 'PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik.\n\n';
-    let connection;
-    try {
-        console.log('⏳ Mulai mengambil data dari MySQL untuk context.txt...');
-        connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute(query);
-        const jsonText = JSON.stringify(rows, null, 2);
-        const contextText = pemaIntro + jsonText;
-        fs.writeFileSync('./context.txt', contextText, 'utf8');
-        console.log('✅ context.txt berhasil digenerate dari MySQL');
-    } catch (err) {
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
-            console.error('❌ Tidak dapat terhubung ke MySQL. Pastikan service MySQL berjalan dan konfigurasi sudah benar.');
-        } else {
-            console.error('❌ Gagal generate context.txt dari MySQL:', err.message);
-        }
-    } finally {
-        if (connection) await connection.end();
-        console.log('ℹ️ Proses generate context.txt dari MySQL selesai.');
-    }
+const MYSQL_CONTEXT_ENABLED = process.env.MYSQL_CONTEXT_ENABLED === 'true';
+if (MYSQL_CONTEXT_ENABLED) {
+    const dbConfig = {
+        host: process.env.MYSQL_HOST,
+        user: process.env.MYSQL_USER,
+        password: process.env.MYSQL_PASSWORD,
+        database: process.env.MYSQL_DATABASE,
+        port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
+    };
+    const contextQuery = process.env.MYSQL_CONTEXT_QUERY || 'SELECT * FROM your_table LIMIT 100';
+    generateContextFromMysql(dbConfig, contextQuery);
+    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
 }
 
 // Fungsi untuk menangani pesan baru dan membalas langsung
@@ -344,7 +131,7 @@ async function handleIncomingMessage(msg) {
 
 
     // Coba dengan context dulu
-    let response = await askGeminiFlash(text);
+    let response = await askGeminiFlash(text, GEMINI_API_KEY);
 
     // Jika jawaban adalah "Maaf, data tidak tersedia dalam sistem." atau terlalu pendek/generik
     let isUnclear =
@@ -355,7 +142,7 @@ async function handleIncomingMessage(msg) {
 
     // Jika unclear, coba ulangi ke Gemini tanpa konteks
     if (isUnclear) {
-        const fallbackResponse = await askGeminiFlashWithoutContext(text);
+        const fallbackResponse = await askGeminiFlashWithoutContext(text, GEMINI_API_KEY);
         let isUnclearFallback =
             !fallbackResponse ||
             fallbackResponse.trim().length < 10 ||
@@ -395,7 +182,6 @@ client.on('message', handleIncomingMessage);
 // Jalankan polling setiap 5 menit
 setInterval(pollAndSendMessages, 2 * 60 * 1000);
 
-const MYSQL_CONTEXT_ENABLED = process.env.MYSQL_CONTEXT_ENABLED === 'true';
 if (MYSQL_CONTEXT_ENABLED) {
     const dbConfig = {
         host: process.env.MYSQL_HOST,
