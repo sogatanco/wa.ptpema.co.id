@@ -61,6 +61,21 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             /maaf|tidak dapat|tidak tahu|kurang jelas|saya tidak/.test(fallbackResponse.toLowerCase());
 
         await msg.reply(fallbackResponse);
+
+        // Kirim pesan perkenalan jika belum pernah, saat isUnclearFallback
+        if (isUnclearFallback && !greetedNumbers.has(from)) {
+            const introMsg =
+                "Halo! 👋\n" +
+                "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
+                "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
+                "Terima kasih.";
+            try {
+                await msg.reply(introMsg);
+                greetedNumbers.add(from);
+            } catch (err) {
+                console.error('❌ Gagal kirim pesan perkenalan:', err.message);
+            }
+        }
         return;
     }
 
