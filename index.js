@@ -106,14 +106,21 @@ if (MYSQL_CONTEXT_ENABLED) {
         // Tambahkan opsi lain jika perlu (misal ssl)
     };
 
-    // Ambil semua variabel env yang diawali MYSQL_CONTEXT_QUERY
+    // Ambil semua variabel env yang diawali MYSQL_CONTEXT_QUERY dan urutkan berdasar angka di akhir (atau kosong untuk utama)
     const contextQueries = Object.entries(process.env)
-        .filter(([key]) => key.startsWith('MYSQL_CONTEXT_QUERY'))
-        .sort(([a], [b]) => a.localeCompare(b)) // urutkan agar context1, context2, dst
+        .filter(([key]) => key.match(/^MYSQL_CONTEXT_QUERY(\d*)$/))
+        .sort(([a], [b]) => {
+            // Ekstrak angka di akhir, kosong = 1 (utama)
+            const getNum = k => {
+                const m = k.match(/^MYSQL_CONTEXT_QUERY(\d*)$/);
+                return m && m[1] ? parseInt(m[1]) : 1;
+            };
+            return getNum(a) - getNum(b);
+        })
         .map(([key, value]) => ({ key, value }));
 
     contextQueries.forEach(({ key, value }, idx) => {
-        // context.txt, context2.txt, context3.txt, dst
+        // context.txt untuk utama, context2.txt dst untuk berikutnya
         const fileName = idx === 0 ? 'context.txt' : `context${idx + 1}.txt`;
         generateContextFromMysql(dbConfig, value, fileName);
         setInterval(() => generateContextFromMysql(dbConfig, value, fileName), 60 * 60 * 1000);
