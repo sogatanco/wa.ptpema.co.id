@@ -95,7 +95,7 @@ app.post('/send', apiKeyAuth(API_KEY), async (req, res) => {
 setInterval(() => pollAndSendMessages(isReady, KEY_SYS, formatTanggal, client), 2 * 60 * 1000);
 
 const MYSQL_CONTEXT_ENABLED = process.env.MYSQL_CONTEXT_ENABLED === 'true';
-let dbConfig, contextQuery;
+let dbConfig;
 if (MYSQL_CONTEXT_ENABLED) {
     dbConfig = {
         host: process.env.MYSQL_HOST,
@@ -105,9 +105,19 @@ if (MYSQL_CONTEXT_ENABLED) {
         port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
         // Tambahkan opsi lain jika perlu (misal ssl)
     };
-    contextQuery = process.env.MYSQL_CONTEXT_QUERY ;
-    generateContextFromMysql(dbConfig, contextQuery);
-    setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
+
+    // Ambil semua variabel env yang diawali MYSQL_CONTEXT_QUERY
+    const contextQueries = Object.entries(process.env)
+        .filter(([key]) => key.startsWith('MYSQL_CONTEXT_QUERY'))
+        .sort(([a], [b]) => a.localeCompare(b)) // urutkan agar context1, context2, dst
+        .map(([key, value]) => ({ key, value }));
+
+    contextQueries.forEach(({ key, value }, idx) => {
+        // context.txt, context2.txt, context3.txt, dst
+        const fileName = idx === 0 ? 'context.txt' : `context${idx + 1}.txt`;
+        generateContextFromMysql(dbConfig, value, fileName);
+        setInterval(() => generateContextFromMysql(dbConfig, value, fileName), 60 * 60 * 1000);
+    });
 }
 
 // Pasang handler pada event message

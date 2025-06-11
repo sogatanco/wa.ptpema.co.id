@@ -1,27 +1,8 @@
 import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
-import fs from 'fs';
 
 // Menyimpan riwayat chat per user (sederhana, memory only)
 const chatHistory = new Map();
-
-// Ambil daftar nomor dari context.txt (sekali saat start, bisa di-refresh jika perlu)
-let nomorTerdaftar = new Set();
-function loadNomorTerdaftar() {
-    try {
-        const context = fs.readFileSync('./context.txt', 'utf8');
-        // Cari semua nomor hp yang berupa digit minimal 10 karakter (misal: 6281234567890)
-        const matches = context.match(/\b\d{10,16}\b/g);
-        if (matches) {
-            nomorTerdaftar = new Set(matches);
-        }
-    } catch (e) {
-        nomorTerdaftar = new Set();
-    }
-}
-loadNomorTerdaftar();
-// Tambahkan pengecekan/refresh nomor terdaftar setiap 5 menit
-setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 
 export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greetedNumbers }) {
     const chat = await msg.getChat();
@@ -31,38 +12,6 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     const nomor = from.replace(/@.*$/, '');
     console.log(`📥 Pesan masuk dari ${nomor}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
-
-    // Cek apakah nomor pengirim terdaftar di context.txt
-    if (!nomorTerdaftar.has(nomor)) {
-        // Jika pengirim tidak terdaftar, cek apakah dia menanyakan/meminta data nomor hp
-        const mintaNomor = /\b(nomor|no\.? hp|no\.? handphone|no\.? telepon|phone|contact|kontak)\b/i;
-        // Deteksi pola "detail [nama]" atau "detail nama_karyawan"
-        const detailNama = /^detail\s+([a-zA-Z0-9_ ]+)$/i;
-        if (mintaNomor.test(text) || /\b\d{10,16}\b/.test(text)) {
-            await msg.reply('Maaf, Anda tidak terdaftar di sistem. Data nomor HP tidak dapat diberikan.');
-            return;
-        }
-        if (detailNama.test(text)) {
-            // Modifikasi prompt agar AI tidak menampilkan nomor HP/email jika user tidak terdaftar
-            // Misal: tambahkan instruksi ke prompt
-            let prompt = text + ". Jangan tampilkan nomor HP dan email jika user tidak terdaftar, tampilkan data lain saja.";
-            let response = await askGeminiFlash(prompt, GEMINI_API_KEY);
-            // Filter manual jika perlu (misal: hapus baris yang mengandung nomor/email)
-            if (response) {
-                // Hapus baris yang mengandung pola nomor HP atau email
-                response = response
-                    .split('\n')
-                    .filter(line =>
-                        !/\b\d{10,16}\b/.test(line) &&
-                        !/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/.test(line)
-                    )
-                    .join('\n');
-            }
-            await msg.reply(response || 'Data tidak ditemukan.');
-            return;
-        }
-        // ...existing code...
-    }
 
     // Simpan riwayat chat user (maksimal 5 pesan terakhir)
     let history = chatHistory.get(from) || [];
