@@ -12,7 +12,17 @@ function loadNomorTerdaftar() {
         const context = fs.readFileSync('./context.txt', 'utf8');
         const matches = context.match(/\b\d{10,16}\b/g);
         if (matches) {
-            nomorTerdaftar = new Set(matches);
+            // Simpan nomor dalam bentuk asli, tanpa kode negara, dan dengan kode negara
+            nomorTerdaftar = new Set();
+            matches.forEach(no => {
+                nomorTerdaftar.add(no); // as is
+                // tanpa 62 di depan
+                nomorTerdaftar.add(no.replace(/^62/, ''));
+                // tanpa 0 di depan
+                nomorTerdaftar.add(no.replace(/^0/, ''));
+                // tanpa 62 dan tanpa 0
+                nomorTerdaftar.add(no.replace(/^62/, '').replace(/^0/, ''));
+            });
         }
     } catch (e) {
         nomorTerdaftar = new Set();
@@ -22,11 +32,20 @@ loadNomorTerdaftar();
 setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 
 export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greetedNumbers }) {
+    console.log(nomorTerdaftar); // Debug: tampilkan nomor terdaftar
     const chat = await msg.getChat();
     if (chat.isGroup) return;
     const from = msg.from;
     // Pisahkan nomor saja dari msg.from (misal: 6281234567890@c.us -> 6281234567890)
-    const nomor = from.replace(/@.*$/, '');
+    let nomor = from.replace(/@.*$/, '');
+    // Hilangkan kode negara '62' di depan jika ada, dan juga '0' di depan
+    const nomorVariasi = [
+        nomor,
+        nomor.replace(/^62/, ''),
+        nomor.replace(/^0/, ''),
+        nomor.replace(/^62/, '').replace(/^0/, '')
+    ];
+
     console.log(`📥 Pesan masuk dari ${nomor}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
@@ -58,8 +77,11 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         fullPrompt = `${historyPrompt}\nUser: ${text}`;
     }
 
+    // Gunakan pengecekan variasi nomor
+    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
+
     // Pilih context file sesuai status nomor pengirim
-    let contextFile = nomorTerdaftar.has(nomor) ? 'context.txt' : 'context2.txt';
+    let contextFile = isTerdaftar ? 'context.txt' : 'context2.txt';
 
     // Modifikasi askGeminiFlash agar menerima parameter contextFile
     let response = await askGeminiFlash(fullPrompt, GEMINI_API_KEY, contextFile);
