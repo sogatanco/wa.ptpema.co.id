@@ -105,7 +105,7 @@ if (MYSQL_CONTEXT_ENABLED) {
         port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
         // Tambahkan opsi lain jika perlu (misal ssl)
     };
-    contextQuery = process.env.MYSQL_CONTEXT_QUERY || 'SELECT * FROM your_table LIMIT 100';
+    contextQuery = process.env.MYSQL_CONTEXT_QUERY ;
     generateContextFromMysql(dbConfig, contextQuery);
     setInterval(() => generateContextFromMysql(dbConfig, contextQuery), 60 * 60 * 1000);
 }
