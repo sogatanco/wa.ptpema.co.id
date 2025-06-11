@@ -5,6 +5,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     const chat = await msg.getChat();
     if (chat.isGroup) return;
     const from = msg.from;
+    console.log(`📥 Pesan masuk dari ${from}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
     // Fitur: jika pesan "p", balas dengan teks saja tanpa tombol
