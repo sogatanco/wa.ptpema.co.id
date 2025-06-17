@@ -161,7 +161,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
-            // Simpan log meeting ke file dalam bentuk JSON
+            let replyMsg = `${greet}meeting Zoom berhasil dibuat!\n`;
+            replyMsg += `📝 Topik: ${topic}\n`;
+            replyMsg += `📅 Tanggal: ${meetingTime.format('YYYY-MM-DD')}\n`;
+            replyMsg += `🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
+            replyMsg += zoomResult.join_url ? `🔗 Link: ${zoomResult.join_url}\n` : '';
+            replyMsg += zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '';
+            replyMsg += zoomResult.password ? `🔑 Password: ${zoomResult.password}\n` : '';
+
+            // Simpan log meeting ke file dalam bentuk JSON dan tampilkan daftar meeting mendatang
             try {
                 const logFile = './meeting_log.json';
                 let logs = [];
@@ -206,14 +214,6 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             } catch (e) {
                 console.error('❌ Gagal menyimpan log meeting:', e.message);
             }
-
-            let replyMsg = `${greet}meeting Zoom berhasil dibuat!\n`;
-            replyMsg += `📝 Topik: ${topic}\n`;
-            replyMsg += `📅 Tanggal: ${meetingTime.format('YYYY-MM-DD')}\n`;
-            replyMsg += `🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
-            replyMsg += zoomResult.join_url ? `🔗 Link: ${zoomResult.join_url}\n` : '';
-            replyMsg += zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '';
-            replyMsg += zoomResult.password ? `🔑 Password: ${zoomResult.password}\n` : '';
 
             await msg.reply(replyMsg.trim());
         } catch (err) {
