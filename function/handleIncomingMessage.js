@@ -145,11 +145,13 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                         }
                         return a.tgl.localeCompare(b.tgl);
                     });
+                // Fungsi untuk title case
+                const toTitleCase = str => str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 let replyMsg = '❗Maaf Waktu meeting yang Anda pilih sudah dipakai. Silakan pilih waktu lain atau konfirmasi ke PIC terkait untuk melakukan perubahan.\n';
                 if (futureMeetings.length > 0) {
                     let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
                     futureMeetings.forEach((m, idx) => {
-                        listMsg += `${idx + 1}. *${m.topic}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
+                        listMsg += `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
                     });
                     replyMsg += listMsg;
                 }
@@ -248,9 +250,11 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                     });
 
                 if (futureMeetings.length > 0) {
+                    // Fungsi untuk title case
+                    const toTitleCase = str => str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                     let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
                     futureMeetings.forEach((m, idx) => {
-                        listMsg += `${idx + 1}. *${m.topic}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
+                        listMsg += `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
                     });
                     replyMsg += listMsg;
                 }
