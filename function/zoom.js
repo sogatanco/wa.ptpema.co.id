@@ -34,7 +34,7 @@ export const createZoomMeeting = async (topic, start_time_iso) => {
             duration: 60,
             timezone: 'Asia/Jakarta',
             settings: {
-                use_pmi: true, // <== ini penting
+                use_pmi: false, // GUNAKAN meeting baru, BUKAN PMI agar waktu sesuai
                 join_before_host: true,
                 waiting_room: false,
             }
