@@ -2,6 +2,14 @@ import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import fs from 'fs';
 
+import { createZoomMeeting } from './zoom.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 // Menyimpan riwayat chat per user (hanya pertanyaan & jawaban terakhir)
 const chatHistory = new Map();
 
@@ -71,6 +79,30 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     // Gunakan pengecekan variasi nomor
     const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
     console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
+
+    // Fitur buat zoom meeting hanya jika nomor terdaftar
+    if (isTerdaftar && /^buat (zoom )?meeting\b/.test(text)) {
+        try {
+            const topicMatch = text.match(/topik:\s*(.+?)(?=\s+jam:|$)/i);
+            const timeMatch = text.match(/jam:\s*([0-9]{1,2}[:.][0-9]{2})/i);
+
+            const topic = topicMatch ? topicMatch[1].trim() : 'Meeting dari WhatsApp Bot';
+            const timeString = timeMatch ? timeMatch[1].replace('.', ':') : '09:00';
+
+            const [hour, minute] = timeString.split(':').map(Number);
+
+            const meetingTime = dayjs().tz('Asia/Jakarta').hour(hour).minute(minute).second(0);
+            const isoTime = meetingTime.toISOString();
+
+            const link = await createZoomMeeting(topic, isoTime);
+
+            await msg.reply(`✅ Meeting dibuat!\n📝 Topik: ${topic}\n🕒 Jam: ${timeString}\n🔗 Link: ${link}`);
+        } catch (err) {
+            console.error(err);
+            await msg.reply('❌ Gagal membuat meeting. Pastikan formatnya benar.\nContoh:\n`buat zoom meeting topik: Rapat A jam: 14:00`');
+        }
+        return;
+    }
 
     // Pilih context file sesuai status nomor pengirim
     let contextFile = isTerdaftar ? 'context.txt' : 'context2.txt';
