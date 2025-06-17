@@ -111,17 +111,47 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
             // Gabungkan tanggal dan jam secara eksplisit, pastikan timezone Asia/Jakarta
             const dateTimeStr = `${dateStr} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
-            // Gunakan dayjs.tz untuk parsing dan konversi ke UTC ISO string
             const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta');
-            const isoTime = meetingTime.utc().format(); // ISO UTC string untuk Zoom
+            const isoTime = meetingTime.utc().format();
 
-            console.log(`📅 Tanggal meeting: ${meetingTime.format('YYYY-MM-DD HH:mm')}`);
-            console.log(`🕒 Jam meeting: ${meetingTime}`);
-            console.log(`🌍 Zona waktu (UTC): ${isoTime}`);
+            // Cari nama dan employee_id dari context.txt berdasarkan nomor pengirim
+            let nama = '';
+            let employeeId = '';
+            try {
+                const context = fs.readFileSync('./context.txt', 'utf8');
+                const jsonStart = context.indexOf('[');
+                if (jsonStart !== -1) {
+                    const jsonText = context.slice(jsonStart);
+                    const data = JSON.parse(jsonText);
+                    // Normalisasi nomor
+                    const norm = n => n.replace(/^(\+?62|0+)/, '');
+                    const normNomor = norm(nomor);
+                    const found = data.find(item =>
+                        item.nomor && norm(item.nomor) === normNomor
+                    );
+                    if (found) {
+                        nama = found.nama || found.name || '';
+                        employeeId = found.employee_id || found.nip || found.nik || '';
+                    }
+                }
+            } catch (e) {
+                // ignore
+            }
+
+            let greet = '';
+            if (nama && employeeId) {
+                greet = `Halo ${nama} (${employeeId}), `;
+            } else if (nama) {
+                greet = `Halo ${nama}, `;
+            } else if (employeeId) {
+                greet = `Halo (${employeeId}), `;
+            } else {
+                greet = 'Halo, ';
+            }
 
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
-            let replyMsg = `✅ Meeting Zoom berhasil dibuat!\n`;
+            let replyMsg = `${greet}meeting Zoom berhasil dibuat!\n`;
             replyMsg += `📝 Topik: ${topic}\n`;
             replyMsg += `📅 Tanggal: ${meetingTime.format('YYYY-MM-DD')}\n`;
             replyMsg += `🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
