@@ -80,15 +80,50 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
     console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
 
-    // Fitur buat zoom meeting hanya jika nomor terdaftar
-    if (isTerdaftar && /^buat (zoom )?meeting\b/.test(text)) {
-        const timeRegex = /(?:jam|pukul)[\s:]*([0-9]{1,2})[.:\s]?([0-9]{2})/i;
-        const dateRegex = /(?:tanggal|tgl):\s*([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}[-/][0-9]{2}[-/][0-9]{4})/i;
-        const topicRegex = /(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul|tanggal|tgl):|$)/i;
+    // Deteksi perintah zoom meeting lebih luas (bisa bahasa Inggris/campuran)
+    const isZoomPrompt =
+        /^buat (zoom )?meeting\b/.test(text) ||
+        (text.includes('zoom') && text.includes('meeting')) ||
+        /create.*zoom.*meeting/i.test(text) ||
+        /schedule.*zoom/i.test(text);
+
+    if (isTerdaftar && isZoomPrompt) {
         try {
-            const topicMatch = text.match(topicRegex);
-            const timeMatch = text.match(timeRegex);
-            const dateMatch = text.match(dateRegex);
+            // Regex lebih fleksibel (bahasa indo/inggris)
+            const timeRegex = /(?:jam|pukul|at|time)[\s:]*([0-9]{1,2})[.:\s]?([0-9]{2})/i;
+            const dateRegex = /(?:tanggal|tgl|date)[\s:]*([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}[-/][0-9]{2}[-/][0-9]{4})/i;
+            const topicRegex = /(?:topik|topic|about|regarding|subject)[\s:]*([^\n]+?)(?=\s+(?:jam|pukul|at|time|tanggal|tgl|date):|$)/i;
+
+            let topicMatch = text.match(topicRegex);
+            let timeMatch = text.match(timeRegex);
+            let dateMatch = text.match(dateRegex);
+
+            // Jika salah satu tidak ditemukan, gunakan Gemini untuk ekstraksi detail
+            if (!topicMatch || !timeMatch || !dateMatch) {
+                const extractionPrompt =
+                    `Extract the topic, date (YYYY-MM-DD), and time (HH:mm) for a Zoom meeting from this message: "${msg.body}". ` +
+                    `Respond ONLY in JSON format: {"topic":"...","date":"YYYY-MM-DD","time":"HH:mm"}. If any value is missing, use an empty string.`;
+                try {
+                    const extractionResponse = await askGeminiFlashWithoutContext(extractionPrompt, GEMINI_API_KEY);
+                    let extracted = {};
+                    try {
+                        extracted = JSON.parse(extractionResponse);
+                    } catch {
+                        const jsonMatch = extractionResponse.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            extracted = JSON.parse(jsonMatch[0]);
+                        }
+                    }
+                    if (extracted.topic && !topicMatch) topicMatch = [null, extracted.topic];
+                    if (extracted.time && !timeMatch && extracted.time) {
+                        const [h, m] = extracted.time.split(':');
+                        timeMatch = [null, h, m];
+                    }
+                    if (extracted.date && !dateMatch) dateMatch = [null, extracted.date];
+                } catch (e) {
+                    // ignore, biarkan error handling di bawah
+                }
+            }
 
             if (!topicMatch || !timeMatch || !dateMatch) {
                 await msg.reply(
@@ -194,9 +229,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             }
 
             let greet = '';
-             if (nama) {
+            if (nama) {
                 greet = `Halo ${nama}, `;
-            }  else {
+            } else {
                 greet = 'Halo, ';
             }
 
@@ -259,14 +294,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             }
 
             await msg.reply(replyMsg.trim());
+            return;
         } catch (err) {
             console.error(err);
             await msg.reply(
                 '❌ Gagal membuat meeting. Pastikan formatnya benar.\n' +
                 'Contoh:\n`buat zoom meeting topik: Rapat A tanggal: 2024-07-01 jam: 14:00`'
             );
+            return;
         }
-        return;
     }
 
     // Pilih context file sesuai status nomor pengirim
