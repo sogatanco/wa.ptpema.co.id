@@ -2,10 +2,10 @@ import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import fs from 'fs';
 
-import { createZoomMeeting } from './zoom.js';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+import utc from 'dayjs/plugin/utc.js';
+import { createZoomMeeting } from './zoom.js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -82,13 +82,14 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
     // Fitur buat zoom meeting hanya jika nomor terdaftar
     if (isTerdaftar && /^buat (zoom )?meeting\b/.test(text)) {
+        const timeRegex = /(?:jam|pukul)[\s:]*([0-9]{1,2})[.:\s]?([0-9]{2})/i;
+        const dateRegex = /(?:tanggal|tgl):\s*([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}[-/][0-9]{2}[-/][0-9]{4})/i;
+        const topicRegex = /(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul|tanggal|tgl):|$)/i;
         try {
-            // Ambil topik (setelah "topik:" atau "topic:") dan jam (setelah "jam:" atau "pukul:") dan tanggal (setelah "tanggal:" atau "tgl:")
-            const topicMatch = text.match(/(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul|tanggal|tgl):|$)/i);
-            const timeMatch = text.match(/(?:jam|pukul):\s*([0-9]{1,2}[:.][0-9]{2})/i);
-            const dateMatch = text.match(/(?:tanggal|tgl):\s*([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}[-/][0-9]{2}[-/][0-9]{4})/i);
+            const topicMatch = text.match(topicRegex);
+            const timeMatch = text.match(timeRegex);
+            const dateMatch = text.match(dateRegex);
 
-            // Validasi: semua harus ada
             if (!topicMatch || !timeMatch || !dateMatch) {
                 await msg.reply(
                     '❗ Mohon sertakan topik, tanggal, dan jam meeting.\n' +
@@ -99,25 +100,19 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             }
 
             const topic = topicMatch[1].trim();
-            const timeString = timeMatch[1].replace('.', ':');
+            const hour = parseInt(timeMatch[1]);
+            const minute = parseInt(timeMatch[2]);
 
-            // Tanggal
             let dateStr = dateMatch[1].replace(/\//g, '-');
             if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-                // dd-mm-yyyy to yyyy-mm-dd
                 const [d, m, y] = dateStr.split('-');
                 dateStr = `${y}-${m}-${d}`;
             }
-            let meetingDate = dayjs.tz(dateStr, 'Asia/Jakarta');
 
-            const [hour, minute] = timeString.split(':').map(Number);
-
-            // Set jam dan menit pada tanggal yang sudah didapat
-            let meetingTime = meetingDate.hour(hour).minute(minute).second(0);
-
+            const meetingDate = dayjs.tz(dateStr, 'Asia/Jakarta');
+            const meetingTime = meetingDate.hour(hour).minute(minute).second(0);
             const isoTime = meetingTime.toISOString();
 
-            // Buat meeting Zoom
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
             let replyMsg = `✅ Meeting Zoom berhasil dibuat!\n`;
@@ -131,7 +126,10 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             await msg.reply(replyMsg.trim());
         } catch (err) {
             console.error(err);
-            await msg.reply('❌ Gagal membuat meeting. Pastikan formatnya benar.\nContoh:\n`buat zoom meeting topik: Rapat A tanggal: 2024-07-01 jam: 14:00`');
+            await msg.reply(
+                '❌ Gagal membuat meeting. Pastikan formatnya benar.\n' +
+                'Contoh:\n`buat zoom meeting topik: Rapat A tanggal: 2024-07-01 jam: 14:00`'
+            );
         }
         return;
     }

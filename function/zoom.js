@@ -25,16 +25,16 @@ const getZoomToken = async () => {
 export const createZoomMeeting = async (topic, start_time_iso) => {
     const token = await getZoomToken();
 
-    const res = await axios.post(
+     const res = await axios.post(
         'https://api.zoom.us/v2/users/me/meetings',
         {
             topic,
-            type: 2,
-            start_time: start_time_iso, // sudah dalam ISO
+            type: 2, // 2 = Scheduled Meeting
+            start_time: start_time_iso,
             duration: 60,
             timezone: 'Asia/Jakarta',
             settings: {
-                use_pmi: false, // GUNAKAN meeting baru, BUKAN PMI agar waktu sesuai
+                use_pmi: true, // ✅ Gunakan Personal Meeting ID
                 join_before_host: true,
                 waiting_room: false,
             }
