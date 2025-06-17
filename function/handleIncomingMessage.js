@@ -109,13 +109,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 dateStr = `${y}-${m}-${d}`;
             }
 
-            // Gabungkan tanggal dan jam secara eksplisit
+            // Gabungkan tanggal dan jam secara eksplisit, pastikan timezone Asia/Jakarta
             const dateTimeStr = `${dateStr} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+            // Gunakan dayjs.tz untuk parsing dan konversi ke UTC ISO string
             const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta');
+            const isoTime = meetingTime.utc().format(); // ISO UTC string untuk Zoom
+
             console.log(`📅 Tanggal meeting: ${meetingTime.format('YYYY-MM-DD HH:mm')}`);
-            const isoTime = meetingTime.toISOString();
-            console.log(`🕒 Jam meeting: ${meetingTime.format('HH:mm')}`);
-            console.log(`🌍 Zona waktu: ${isoTime}`);
+            console.log(`🕒 Jam meeting: ${meetingTime}`);
+            console.log(`🌍 Zona waktu (UTC): ${isoTime}`);
 
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
