@@ -45,12 +45,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     if (chat.isGroup) return;
     const from = msg.from;
     let nomor = from.replace(/@.*$/, '');
-    const nomorVariasi = [
-        nomor,
-        nomor.replace(/^62/, ''),
-        nomor.replace(/^0/, ''),
-        nomor.replace(/^62/, '').replace(/^0/, '')
-    ];
+    // Normalisasi nomor pengirim untuk pencocokan dengan berbagai format di context.txt
+    const norm = n => (n || '').replace(/[^0-9]/g, '').replace(/^(\+?62|0+)/, '');
+    const normNomor = norm(nomor);
 
     console.log(`📥 Pesan masuk dari ${nomor}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
@@ -123,18 +120,23 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 if (jsonStart !== -1) {
                     const jsonText = context.slice(jsonStart);
                     const data = JSON.parse(jsonText);
-                    // Normalisasi nomor: hilangkan +, 0, 62, 628, 60, 65, dst di depan
-                    const norm = n => n.replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
-                    const normNomor = norm(nomor);
-                    // Cek semua variasi nomor di data
+                    // Cek semua variasi key nomor: phone_number, nomor, no_hp, dst
                     const found = data.find(item => {
-                        if (!item.nomor) return false;
-                        const itemNorm = norm(item.nomor);
-                        return itemNorm === normNomor;
+                        // Cek semua kemungkinan field nomor
+                        const nomorFields = [
+                            item.phone_number,
+                            item.nomor,
+                            item.no_hp,
+                            item.nohp,
+                            item.hp,
+                            item.telepon,
+                            item.phone
+                        ];
+                        return nomorFields.some(field => field && norm(field) === normNomor);
                     });
                     if (found) {
-                        nama = found.nama || found.name || '';
-                        employeeId = found.employee_id || found.nip || found.nik || '';
+                        nama = found.first_name || found.nama || found.name || '';
+                        employeeId = found.employe_id || found.employee_id || found.nip || found.nik || '';
                     }
                 }
             } catch (e) {
