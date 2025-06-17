@@ -102,7 +102,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             if (!topicMatch || !timeMatch || !dateMatch) {
                 const extractionPrompt =
                     `Extract the topic, date (YYYY-MM-DD), and time (HH:mm) for a Zoom meeting from this message: "${msg.body}". ` +
-                    `Respond ONLY in JSON format: {"topic":"...","date":"YYYY-MM-DD","time":"HH:mm"}. If any value is missing, use an empty string.`;
+                    `Respond ONLY in JSON format: buat zoom meeting jam: [time] tanggal: [date] topik: [topic]. If any value is missing, use an empty string.`;
                 try {
                     const extractionResponse = await askGeminiFlashWithoutContext(extractionPrompt, GEMINI_API_KEY);
                     let extracted = {};
