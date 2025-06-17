@@ -103,10 +103,12 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
             // zoomResult bisa berupa { join_url, id, password }
-            let replyMsg = `✅ Meeting dibuat!\n📝 Topik: ${topic}\n🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
-            if (zoomResult.join_url) replyMsg += `🔗 Link: ${zoomResult.join_url}\n`;
-            if (zoomResult.id) replyMsg += `🆔 ID: ${zoomResult.id}\n`;
-            if (zoomResult.password) replyMsg += `🔑 Password: ${zoomResult.password}\n`;
+            let replyMsg = `✅ Meeting Zoom berhasil dibuat!\n`;
+            replyMsg += `📝 Topik: ${topic}\n`;
+            replyMsg += `🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
+            replyMsg += zoomResult.join_url ? `🔗 Link: ${zoomResult.join_url}\n` : '';
+            replyMsg += zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '';
+            replyMsg += zoomResult.password ? `🔑 Password: ${zoomResult.password}\n` : '';
 
             await msg.reply(replyMsg.trim());
         } catch (err) {
