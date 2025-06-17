@@ -83,28 +83,46 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     // Fitur buat zoom meeting hanya jika nomor terdaftar
     if (isTerdaftar && /^buat (zoom )?meeting\b/.test(text)) {
         try {
-            // Ambil topik (setelah "topik:" atau "topic:") dan jam (setelah "jam:" atau "pukul:")
-            const topicMatch = text.match(/(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul):|$)/i);
+            // Ambil topik (setelah "topik:" atau "topic:") dan jam (setelah "jam:" atau "pukul:") dan tanggal (setelah "tanggal:" atau "tgl:")
+            const topicMatch = text.match(/(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul|tanggal|tgl):|$)/i);
             const timeMatch = text.match(/(?:jam|pukul):\s*([0-9]{1,2}[:.][0-9]{2})/i);
+            const dateMatch = text.match(/(?:tanggal|tgl):\s*([0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{2}[-/][0-9]{2}[-/][0-9]{4})/i);
 
-            const topic = topicMatch ? topicMatch[1].trim() : 'Meeting';
-            const timeString = timeMatch ? timeMatch[1].replace('.', ':') : '09:00';
+            // Validasi: semua harus ada
+            if (!topicMatch || !timeMatch || !dateMatch) {
+                await msg.reply(
+                    '❗ Mohon sertakan topik, tanggal, dan jam meeting.\n' +
+                    'Contoh:\n' +
+                    '`buat zoom meeting topik: Rapat Divisi tanggal: 2024-07-01 jam: 14:00`'
+                );
+                return;
+            }
+
+            const topic = topicMatch[1].trim();
+            const timeString = timeMatch[1].replace('.', ':');
+
+            // Tanggal
+            let dateStr = dateMatch[1].replace(/\//g, '-');
+            if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+                // dd-mm-yyyy to yyyy-mm-dd
+                const [d, m, y] = dateStr.split('-');
+                dateStr = `${y}-${m}-${d}`;
+            }
+            let meetingDate = dayjs.tz(dateStr, 'Asia/Jakarta');
 
             const [hour, minute] = timeString.split(':').map(Number);
 
-            // Buat waktu meeting di hari ini, jika jam sudah lewat, buat untuk besok
-            let meetingTime = dayjs().tz('Asia/Jakarta').hour(hour).minute(minute).second(0);
-            if (meetingTime.isBefore(dayjs().tz('Asia/Jakarta'))) {
-                meetingTime = meetingTime.add(1, 'day');
-            }
+            // Set jam dan menit pada tanggal yang sudah didapat
+            let meetingTime = meetingDate.hour(hour).minute(minute).second(0);
+
             const isoTime = meetingTime.toISOString();
 
             // Buat meeting Zoom
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
-            // zoomResult bisa berupa { join_url, id, password }
             let replyMsg = `✅ Meeting Zoom berhasil dibuat!\n`;
             replyMsg += `📝 Topik: ${topic}\n`;
+            replyMsg += `📅 Tanggal: ${meetingTime.format('YYYY-MM-DD')}\n`;
             replyMsg += `🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
             replyMsg += zoomResult.join_url ? `🔗 Link: ${zoomResult.join_url}\n` : '';
             replyMsg += zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '';
@@ -113,7 +131,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             await msg.reply(replyMsg.trim());
         } catch (err) {
             console.error(err);
-            await msg.reply('❌ Gagal membuat meeting. Pastikan formatnya benar.\nContoh:\n`buat zoom meeting topik: Rapat A jam: 14:00`');
+            await msg.reply('❌ Gagal membuat meeting. Pastikan formatnya benar.\nContoh:\n`buat zoom meeting topik: Rapat A tanggal: 2024-07-01 jam: 14:00`');
         }
         return;
     }
