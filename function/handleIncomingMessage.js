@@ -123,12 +123,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 if (jsonStart !== -1) {
                     const jsonText = context.slice(jsonStart);
                     const data = JSON.parse(jsonText);
-                    // Normalisasi nomor
-                    const norm = n => n.replace(/^(\+?62|0+)/, '');
+                    // Normalisasi nomor: hilangkan +, 0, 62, 628, 60, 65, dst di depan
+                    const norm = n => n.replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
                     const normNomor = norm(nomor);
-                    const found = data.find(item =>
-                        item.nomor && norm(item.nomor) === normNomor
-                    );
+                    // Cek semua variasi nomor di data
+                    const found = data.find(item => {
+                        if (!item.nomor) return false;
+                        const itemNorm = norm(item.nomor);
+                        return itemNorm === normNomor;
+                    });
                     if (found) {
                         nama = found.nama || found.name || '';
                         employeeId = found.employee_id || found.nip || found.nik || '';
