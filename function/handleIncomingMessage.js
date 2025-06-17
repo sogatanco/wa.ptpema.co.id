@@ -145,7 +145,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                         }
                         return a.tgl.localeCompare(b.tgl);
                     });
-                let replyMsg = '❗ Waktu meeting yang Anda pilih sudah dipakai. Silakan pilih waktu lain.\n';
+                let replyMsg = '❗Maaf Waktu meeting yang Anda pilih sudah dipakai. Silakan pilih waktu lain atau konfirmasi ke PIC terkait untuk melakukan perubahan.\n';
                 if (futureMeetings.length > 0) {
                     let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
                     futureMeetings.forEach((m, idx) => {
