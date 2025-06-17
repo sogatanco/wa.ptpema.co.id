@@ -114,6 +114,49 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta');
             const isoTime = meetingTime.utc().format();
 
+            // Cek bentrok waktu meeting (±1 jam di tanggal yang sama)
+            let logFile = './meeting_log.json';
+            let logs = [];
+            if (fs.existsSync(logFile)) {
+                const raw = fs.readFileSync(logFile, 'utf8');
+                try {
+                    logs = JSON.parse(raw);
+                    if (!Array.isArray(logs)) logs = [];
+                } catch {
+                    logs = [];
+                }
+            }
+            // Cek bentrok
+            const isConflict = logs.some(m => {
+                if (m.tgl !== meetingTime.format('YYYY-MM-DD')) return false;
+                // Cek selisih waktu dalam menit
+                const mTime = dayjs.tz(`${m.tgl} ${m.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                const diff = Math.abs(meetingTime.diff(mTime, 'minute'));
+                return diff < 60; // bentrok jika kurang dari 1 jam
+            });
+            if (isConflict) {
+                // Ambil list meeting dari hari ini ke depan
+                const today = dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD');
+                const futureMeetings = logs
+                    .filter(m => m.tgl >= today)
+                    .sort((a, b) => {
+                        if (a.tgl === b.tgl) {
+                            return a.jam.localeCompare(b.jam);
+                        }
+                        return a.tgl.localeCompare(b.tgl);
+                    });
+                let replyMsg = '❗ Waktu meeting yang Anda pilih sudah dipakai. Silakan pilih waktu lain.\n';
+                if (futureMeetings.length > 0) {
+                    let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
+                    futureMeetings.forEach((m, idx) => {
+                        listMsg += `${idx + 1}. *${m.topic}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
+                    });
+                    replyMsg += listMsg;
+                }
+                await msg.reply(replyMsg.trim());
+                return;
+            }
+
             // Cari nama dan employee_id dari context.txt berdasarkan nomor pengirim
             let nama = '';
             let employeeId = '';
@@ -207,7 +250,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 if (futureMeetings.length > 0) {
                     let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
                     futureMeetings.forEach((m, idx) => {
-                        listMsg += `${idx + 1}. ${m.tgl} ${m.jam} - ${m.topic}${m.url ? ` (${m.url})` : ''}\n`;
+                        listMsg += `${idx + 1}. *${m.topic}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`;
                     });
                     replyMsg += listMsg;
                 }
