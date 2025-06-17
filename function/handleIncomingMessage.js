@@ -194,13 +194,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             }
 
             let greet = '';
-            if (nama && employeeId) {
-                greet = `Halo ${nama} (${employeeId}), `;
-            } else if (nama) {
+             if (nama) {
                 greet = `Halo ${nama}, `;
-            } else if (employeeId) {
-                greet = `Halo (${employeeId}), `;
-            } else {
+            }  else {
                 greet = 'Halo, ';
             }
 
