@@ -83,20 +83,32 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     // Fitur buat zoom meeting hanya jika nomor terdaftar
     if (isTerdaftar && /^buat (zoom )?meeting\b/.test(text)) {
         try {
-            const topicMatch = text.match(/topik:\s*(.+?)(?=\s+jam:|$)/i);
-            const timeMatch = text.match(/jam:\s*([0-9]{1,2}[:.][0-9]{2})/i);
+            // Ambil topik (setelah "topik:" atau "topic:") dan jam (setelah "jam:" atau "pukul:")
+            const topicMatch = text.match(/(?:topik|topic):\s*([^\n]+?)(?=\s+(?:jam|pukul):|$)/i);
+            const timeMatch = text.match(/(?:jam|pukul):\s*([0-9]{1,2}[:.][0-9]{2})/i);
 
-            const topic = topicMatch ? topicMatch[1].trim() : 'Meeting dari WhatsApp Bot';
+            const topic = topicMatch ? topicMatch[1].trim() : 'Meeting';
             const timeString = timeMatch ? timeMatch[1].replace('.', ':') : '09:00';
 
             const [hour, minute] = timeString.split(':').map(Number);
 
-            const meetingTime = dayjs().tz('Asia/Jakarta').hour(hour).minute(minute).second(0);
+            // Buat waktu meeting di hari ini, jika jam sudah lewat, buat untuk besok
+            let meetingTime = dayjs().tz('Asia/Jakarta').hour(hour).minute(minute).second(0);
+            if (meetingTime.isBefore(dayjs().tz('Asia/Jakarta'))) {
+                meetingTime = meetingTime.add(1, 'day');
+            }
             const isoTime = meetingTime.toISOString();
 
-            const link = await createZoomMeeting(topic, isoTime);
+            // Buat meeting Zoom
+            const zoomResult = await createZoomMeeting(topic, isoTime);
 
-            await msg.reply(`✅ Meeting dibuat!\n📝 Topik: ${topic}\n🕒 Jam: ${timeString}\n🔗 Link: ${link}`);
+            // zoomResult bisa berupa { join_url, id, password }
+            let replyMsg = `✅ Meeting dibuat!\n📝 Topik: ${topic}\n🕒 Jam: ${meetingTime.format('HH:mm')}\n`;
+            if (zoomResult.join_url) replyMsg += `🔗 Link: ${zoomResult.join_url}\n`;
+            if (zoomResult.id) replyMsg += `🆔 ID: ${zoomResult.id}\n`;
+            if (zoomResult.password) replyMsg += `🔑 Password: ${zoomResult.password}\n`;
+
+            await msg.reply(replyMsg.trim());
         } catch (err) {
             console.error(err);
             await msg.reply('❌ Gagal membuat meeting. Pastikan formatnya benar.\nContoh:\n`buat zoom meeting topik: Rapat A jam: 14:00`');
