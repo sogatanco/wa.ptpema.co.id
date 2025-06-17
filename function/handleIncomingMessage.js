@@ -45,9 +45,12 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     if (chat.isGroup) return;
     const from = msg.from;
     let nomor = from.replace(/@.*$/, '');
-    // Normalisasi nomor pengirim untuk pencocokan dengan berbagai format di context.txt
-    const norm = n => (n || '').replace(/[^0-9]/g, '').replace(/^(\+?62|0+)/, '');
-    const normNomor = norm(nomor);
+    const nomorVariasi = [
+        nomor,
+        nomor.replace(/^62/, ''),
+        nomor.replace(/^0/, ''),
+        nomor.replace(/^62/, '').replace(/^0/, '')
+    ];
 
     console.log(`📥 Pesan masuk dari ${nomor}: ${msg.body}`);
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
@@ -120,9 +123,11 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 if (jsonStart !== -1) {
                     const jsonText = context.slice(jsonStart);
                     const data = JSON.parse(jsonText);
-                    // Cek semua variasi key nomor: phone_number, nomor, no_hp, dst
+                    // Normalisasi nomor: hilangkan +, 0, 62, 628, 60, 65, dst di depan
+                    const norm = n => (n || '').replace(/[^0-9]/g, '').replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
+                    const normNomor = norm(nomor);
+                    // Cek semua kemungkinan field nomor di setiap item
                     const found = data.find(item => {
-                        // Cek semua kemungkinan field nomor
                         const nomorFields = [
                             item.phone_number,
                             item.nomor,
