@@ -109,9 +109,10 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 dateStr = `${y}-${m}-${d}`;
             }
 
-            const meetingDate = dayjs.tz(dateStr, 'Asia/Jakarta');
-            console.log(`📅 Tanggal meeting: ${meetingDate.format('YYYY-MM-DD HH:mm')}`);
-            const meetingTime = meetingDate.hour(hour).minute(minute).second(0);
+            // Gabungkan tanggal dan jam secara eksplisit
+            const dateTimeStr = `${dateStr} ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+            const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm:ss', 'Asia/Jakarta');
+            console.log(`📅 Tanggal meeting: ${meetingTime.format('YYYY-MM-DD HH:mm')}`);
             const isoTime = meetingTime.toISOString();
             console.log(`🕒 Jam meeting: ${meetingTime.format('HH:mm')}`);
             console.log(`🌍 Zona waktu: ${isoTime}`);
