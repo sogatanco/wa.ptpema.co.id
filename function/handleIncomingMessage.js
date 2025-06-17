@@ -161,6 +161,52 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
             const zoomResult = await createZoomMeeting(topic, isoTime);
 
+            // Simpan log meeting ke file dalam bentuk JSON
+            try {
+                const logFile = './meeting_log.json';
+                let logs = [];
+                if (fs.existsSync(logFile)) {
+                    const raw = fs.readFileSync(logFile, 'utf8');
+                    try {
+                        logs = JSON.parse(raw);
+                        if (!Array.isArray(logs)) logs = [];
+                    } catch {
+                        logs = [];
+                    }
+                }
+                logs.push({
+                    nomor_user: nomor,
+                    employe_id: employeeId,
+                    nama: nama,
+                    topic: topic,
+                    jam: meetingTime.format('HH:mm'),
+                    tgl: meetingTime.format('YYYY-MM-DD'),
+                    url: zoomResult.join_url || ''
+                });
+                fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+
+                // Ambil list meeting dari hari ini ke depan
+                const today = dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD');
+                const futureMeetings = logs
+                    .filter(m => m.tgl >= today)
+                    .sort((a, b) => {
+                        if (a.tgl === b.tgl) {
+                            return a.jam.localeCompare(b.jam);
+                        }
+                        return a.tgl.localeCompare(b.tgl);
+                    });
+
+                if (futureMeetings.length > 0) {
+                    let listMsg = '\n\n📅 *Daftar Meeting Mendatang:*\n';
+                    futureMeetings.forEach((m, idx) => {
+                        listMsg += `${idx + 1}. ${m.tgl} ${m.jam} - ${m.topic}${m.url ? ` (${m.url})` : ''}\n`;
+                    });
+                    replyMsg += listMsg;
+                }
+            } catch (e) {
+                console.error('❌ Gagal menyimpan log meeting:', e.message);
+            }
+
             let replyMsg = `${greet}meeting Zoom berhasil dibuat!\n`;
             replyMsg += `📝 Topik: ${topic}\n`;
             replyMsg += `📅 Tanggal: ${meetingTime.format('YYYY-MM-DD')}\n`;
