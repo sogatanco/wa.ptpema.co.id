@@ -243,145 +243,83 @@ Ketik angka sesuai pilihan.`;
     // Step booking ruang rapat: tanggal
     if (userMenuState.get(from) === 'booking') {
         const booking = userBookingData.get(from);
-        // Step 1: tanggal
         if (booking && booking.step === 1) {
-            if (text === 'kembali') {
-                userBookingData.delete(from);
-                await msg.reply('Kembali ke menu booking.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
+            // Validasi tanggal
             if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-                await msg.reply('Format tanggal salah. Masukkan tanggal rapat (format: YYYY-MM-DD):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Format tanggal salah. Masukkan tanggal rapat (format: YYYY-MM-DD):');
                 return;
             }
             booking.tanggal = text;
             booking.step = 2;
             userBookingData.set(from, booking);
-            await msg.reply('Masukkan jam rapat (format: HH:mm, contoh: 13:30):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+            await msg.reply('Masukkan jam rapat (format: HH:mm, contoh: 13:30):');
             return;
         }
-        // Step 2: jam
+        // Step jam
         if (booking && booking.step === 2) {
-            if (text === 'kembali') {
-                booking.step = 1;
-                userBookingData.set(from, booking);
-                await msg.reply('Masukkan tanggal rapat (format: YYYY-MM-DD):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             if (!/^\d{2}:\d{2}$/.test(text)) {
-                await msg.reply('Format jam salah. Masukkan jam rapat (format: HH:mm, contoh: 13:30):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Format jam salah. Masukkan jam rapat (format: HH:mm, contoh: 13:30):');
                 return;
             }
             booking.jam = text;
             booking.step = 3;
             userBookingData.set(from, booking);
-            await msg.reply('Masukkan agenda rapat:\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+            await msg.reply('Masukkan agenda rapat:');
             return;
         }
-        // Step 3: agenda
+        // Step agenda
         if (booking && booking.step === 3) {
-            if (text === 'kembali') {
-                booking.step = 2;
-                userBookingData.set(from, booking);
-                await msg.reply('Masukkan jam rapat (format: HH:mm, contoh: 13:30):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             if (!text || text.length < 3) {
-                await msg.reply('Agenda rapat tidak boleh kosong. Masukkan agenda rapat:\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Agenda rapat tidak boleh kosong. Masukkan agenda rapat:');
                 return;
             }
             booking.agenda = text;
             booking.step = 4;
             userBookingData.set(from, booking);
-            await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+            // Ubah prompt agar user memilih dengan huruf
+            await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
             return;
         }
-        // Step 4: ruang
+        // Step ruang
         if (booking && booking.step === 4) {
-            if (text === 'kembali') {
-                booking.step = 3;
-                userBookingData.set(from, booking);
-                await msg.reply('Masukkan agenda rapat:\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             let ruang = '';
             if (text === 'a') ruang = 'Growth';
             else if (text === 'b') ruang = 'Harmony';
             else if (text === 'c') ruang = 'Ruang PAC';
             else {
-                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
                 return;
             }
             booking.ruang = ruang;
             booking.step = 5;
             userBookingData.set(from, booking);
-            await msg.reply('Apakah butuh link Zoom Meeting? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+            // Tanyakan kebutuhan link zoom meeting
+            await msg.reply('Apakah butuh link Zoom Meeting? (Y/N)');
             return;
         }
-        // Step 5: butuh zoom
+        // Step butuh link zoom meeting (Y/N)
         if (booking && booking.step === 5) {
-            if (text === 'kembali') {
-                booking.step = 4;
-                userBookingData.set(from, booking);
-                await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             if (text === 'y' || text === 'ya') {
                 booking.butuh_zoom = true;
             } else if (text === 'n' || text === 'tidak') {
                 booking.butuh_zoom = false;
             } else {
-                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh link Zoom Meeting? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh link Zoom Meeting? (Y/N)');
                 return;
             }
             booking.step = 6;
             userBookingData.set(from, booking);
-            await msg.reply('Apakah butuh konsumsi? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+            // Lanjut ke pertanyaan konsumsi
+            await msg.reply('Apakah butuh konsumsi? (Y/N)');
             return;
         }
-        // Step 6: butuh konsumsi
+        // Step konsumsi (Y/N)
         if (booking && booking.step === 6) {
-            if (text === 'kembali') {
-                booking.step = 5;
-                userBookingData.set(from, booking);
-                await msg.reply('Apakah butuh link Zoom Meeting? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             if (text === 'y' || text === 'ya') {
                 booking.butuh_konsumsi = true;
                 booking.step = 7;
                 userBookingData.set(from, booking);
-                await msg.reply('Sebutkan detail konsumsi yang diminta (format teks, contoh: "Snack dan kopi untuk 10 orang"):\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Sebutkan detail konsumsi yang diminta (format teks, contoh: "Snack dan kopi untuk 10 orang"):');
                 return;
             } else if (text === 'n' || text === 'tidak') {
                 booking.butuh_konsumsi = false;
@@ -390,25 +328,14 @@ Ketik angka sesuai pilihan.`;
                 userBookingData.set(from, booking);
                 // langsung ke proses simpan
             } else {
-                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh konsumsi? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh konsumsi? (Y/N)');
                 return;
             }
         }
-        // Step 7: detail konsumsi
+        // Step detail konsumsi
         if (booking && booking.step === 7) {
-            if (text === 'kembali') {
-                booking.step = 6;
-                userBookingData.set(from, booking);
-                await msg.reply('Apakah butuh konsumsi? (Y/N)\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
-                return;
-            }
-            if (text === 'cancel') {
-                userBookingData.delete(from);
-                await msg.reply('Booking dibatalkan.');
-                return;
-            }
             if (!text || text.length < 3) {
-                await msg.reply('Detail konsumsi tidak boleh kosong. Sebutkan detail konsumsi yang diminta:\nKetik "kembali" untuk kembali atau "cancel" untuk membatalkan.');
+                await msg.reply('Detail konsumsi tidak boleh kosong. Sebutkan detail konsumsi yang diminta:');
                 return;
             }
             booking.konsumsi_detail = text;
@@ -416,7 +343,7 @@ Ketik angka sesuai pilihan.`;
             userBookingData.set(from, booking);
             // lanjut ke proses simpan
         }
-        // Step 8: simpan booking
+        // Step simpan booking (step 8)
         if (booking && booking.step === 8) {
             // Ambil nama PIC dan nomor HP dari context
             const userData = getUserFromContext(nomor);
