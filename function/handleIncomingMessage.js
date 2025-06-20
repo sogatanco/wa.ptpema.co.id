@@ -87,11 +87,98 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             `*BOOKING RUANG RAPAT*
 1. List rapat yang akan datang
 2. Booking ruang rapat
+3. Cancel booking rapat
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
         await msg.reply(submenuMsg);
         return;
+    }
+
+    // Handler submenu Cancel Booking Rapat
+    if (userMenuState.get(from) === 'booking' && text === '3') {
+        // Ambil rapat yang dibuat oleh user ini
+        let rapatList = [];
+        try {
+            if (fs.existsSync('./rapat.json')) {
+                rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
+            }
+        } catch { }
+        // Filter hanya rapat milik user
+        const userRapat = rapatList
+            .map((r, idx) => ({ ...r, id: idx + 1 }))
+            .filter(r => r.user === from);
+
+        if (userRapat.length === 0) {
+            await msg.reply('Anda belum pernah membuat booking rapat.');
+            return;
+        }
+        let listMsg = '*ID Booking Rapat Anda:*\n';
+        userRapat.forEach(r => {
+            listMsg += `ID: ${r.id}\nTanggal: ${r.tanggal}\nJam: ${r.jam}\nAgenda: ${r.agenda}\nRuang: ${r.ruang}\n\n`;
+        });
+        listMsg += 'Ketik ID rapat yang ingin dibatalkan:';
+        userMenuState.set(from, 'cancel-booking-select');
+        userBookingData.set(from, { step: 'select-cancel', userRapat });
+        await msg.reply(listMsg);
+        return;
+    }
+
+    // Handler pilih ID booking yang akan dibatalkan
+    if (userMenuState.get(from) === 'cancel-booking-select') {
+        const booking = userBookingData.get(from);
+        if (booking && booking.step === 'select-cancel') {
+            const id = parseInt(text);
+            if (isNaN(id)) {
+                await msg.reply('ID tidak valid. Ketik ID rapat yang ingin dibatalkan:');
+                return;
+            }
+            const rapat = booking.userRapat.find(r => r.id === id);
+            if (!rapat) {
+                await msg.reply('ID tidak ditemukan. Ketik ID rapat yang ingin dibatalkan:');
+                return;
+            }
+            // Konfirmasi pembatalan
+            userBookingData.set(from, { ...booking, step: 'confirm-cancel', cancelId: id });
+            await msg.reply(`Apakah Anda yakin ingin membatalkan booking rapat dengan ID ${id}? (Y/N)`);
+            return;
+        }
+    }
+
+    // Handler konfirmasi cancel booking
+    if (userMenuState.get(from) === 'cancel-booking-select') {
+        const booking = userBookingData.get(from);
+        if (booking && booking.step === 'confirm-cancel') {
+            if (text.toLowerCase() === 'y' || text.toLowerCase() === 'ya') {
+                let rapatList = [];
+                try {
+                    if (fs.existsSync('./rapat.json')) {
+                        rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
+                    }
+                } catch { }
+                const idx = booking.cancelId - 1;
+                if (!rapatList[idx] || rapatList[idx].user !== from) {
+                    await msg.reply('Booking tidak ditemukan atau bukan milik Anda.');
+                    userMenuState.set(from, 'booking');
+                    userBookingData.delete(from);
+                    return;
+                }
+                rapatList.splice(idx, 1);
+                fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
+                await msg.reply('Booking rapat berhasil dibatalkan.');
+                userMenuState.set(from, 'booking');
+                userBookingData.delete(from);
+                return;
+            } else if (text.toLowerCase() === 'n' || text.toLowerCase() === 'tidak') {
+                await msg.reply('Pembatalan booking dibatalkan.');
+                userMenuState.set(from, 'booking');
+                userBookingData.delete(from);
+                return;
+            } else {
+                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah Anda yakin ingin membatalkan booking rapat ini? (Y/N)');
+                return;
+            }
+        }
     }
 
     // Handler kembali ke menu utama dari submenu
@@ -283,6 +370,7 @@ Ketik angka sesuai pilihan.`;
                 `*BOOKING RUANG RAPAT*
 1. List rapat yang akan datang
 2. Booking ruang rapat
+3. Cancel booking rapat
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
