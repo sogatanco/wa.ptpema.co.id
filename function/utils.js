@@ -83,3 +83,37 @@ export function loadNomorTerdaftar() {
     }
     return nomorTerdaftar;
 }
+
+/**
+ * Cek konflik waktu rapat.
+ * @param {Array} meetings - Daftar rapat (array of objects)
+ * @param {Object} newMeeting - { tanggal, ruang, jam, jam_selesai }
+ * @returns {boolean} true jika ada konflik, false jika tidak
+ */
+export function isMeetingConflict(meetings, newMeeting) {
+    // Pastikan jam mulai dan jam selesai valid
+    if (!newMeeting.jam || !newMeeting.jam_selesai) return false;
+    const tanggal = newMeeting.tanggal;
+    const ruang = newMeeting.ruang;
+    const startA = newMeeting.jam;
+    const endA = newMeeting.jam_selesai;
+
+    // Helper: konversi jam ke menit
+    const toMinutes = jam => {
+        const [h, m] = jam.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const startAMin = toMinutes(startA);
+    const endAMin = toMinutes(endA);
+
+    return meetings.some(m => {
+        if (m.tanggal !== tanggal) return false;
+        if (m.ruang !== ruang) return false;
+        if (!m.jam || !m.jam_selesai) return false;
+        const startBMin = toMinutes(m.jam);
+        const endBMin = toMinutes(m.jam_selesai);
+        // Cek overlap
+        return (startAMin < endBMin && endAMin > startBMin);
+    });
+}

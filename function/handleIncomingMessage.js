@@ -2,7 +2,8 @@ import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil,
-    getUserFromContext // tambahkan import ini
+    getUserFromContext,
+    isMeetingConflict // tambahkan import ini
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
 import fs from 'fs';
@@ -405,6 +406,30 @@ Ketik angka sesuai pilihan.`;
                         rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
                     }
                 } catch { }
+
+                // Cek konflik jadwal
+                const conflict = isMeetingConflict(rapatList, {
+                    tanggal: booking.tanggal,
+                    ruang: booking.ruang,
+                    jam: booking.jam,
+                    jam_selesai: booking.jam_selesai
+                });
+                if (conflict) {
+                    userBookingData.delete(from);
+                    await msg.reply('❌ Jadwal rapat bentrok/konflik dengan booking lain di ruang dan waktu yang sama. Silakan pilih waktu lain.');
+                    // Tampilkan menu booking lagi
+                    const submenuMsg =
+                        `*BOOKING RUANG RAPAT*
+1. List rapat yang akan datang
+2. Booking ruang rapat
+3. Cancel booking rapat
+9. Kembali ke menu utama
+0. Keluar menu
+Ketik angka sesuai pilihan.`;
+                    await msg.reply(submenuMsg);
+                    return;
+                }
+
                 rapatList.push({
                     tanggal: booking.tanggal,
                     jam: booking.jam,
