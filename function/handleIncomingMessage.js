@@ -183,11 +183,11 @@ Ketik angka sesuai pilihan.`;
         // Step ruang
         if (booking && booking.step === 4) {
             let ruang = '';
-            if (text === '1') ruang = 'Growth';
-            else if (text === '2') ruang = 'Harmony';
-            else if (text === '3') ruang = 'Ruang PAC';
+            if (['1', 'growth'].includes(text)) ruang = 'Growth';
+            else if (['2', 'harmony'].includes(text)) ruang = 'Harmony';
+            else if (['3', 'ruang pac', 'pac'].includes(text)) ruang = 'Ruang PAC';
             else {
-                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
+                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka atau nama ruang sesuai pilihan.');
                 return;
             }
             booking.ruang = ruang;
