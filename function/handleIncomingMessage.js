@@ -235,6 +235,7 @@ Ketik angka sesuai pilihan.`;
                     listMsg += `#${r.idx}\n`;
                     listMsg += `${padLabel('Tanggal')}: ${r.tanggal}\n`;
                     listMsg += `${padLabel('Jam')}: ${r.jam}\n`;
+                    listMsg += `${padLabel('Selesai')}: ${r.jam_selesai || '-'}\n`;
                     listMsg += `${padLabel('Agenda')}: ${r.agenda}\n`;
                     if (r.pic_name) listMsg += `${padLabel('PIC')}: ${r.pic_name}\n`;
                     if (r.pic_nomor) listMsg += `${padLabel('No HP')}: ${r.pic_nomor}\n`;
@@ -253,7 +254,7 @@ Ketik angka sesuai pilihan.`;
         return;
     }
 
-    // Step booking ruang rapat: tanggal
+    // Step booking ruang rapat: tanggal, jam mulai, jam selesai, dst
     if (userMenuState.get(from) === 'booking') {
         const booking = userBookingData.get(from);
         if (booking && booking.step === 1) {
@@ -265,36 +266,47 @@ Ketik angka sesuai pilihan.`;
             booking.tanggal = text;
             booking.step = 2;
             userBookingData.set(from, booking);
-            await msg.reply('Masukkan jam rapat (format: HH:mm, contoh: 13:30):');
+            await msg.reply('Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
             return;
         }
-        // Step jam
+        // Step jam mulai
         if (booking && booking.step === 2) {
             if (!/^\d{2}:\d{2}$/.test(text)) {
-                await msg.reply('Format jam salah. Masukkan jam rapat (format: HH:mm, contoh: 13:30):');
+                await msg.reply('Format jam salah. Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
                 return;
             }
             booking.jam = text;
             booking.step = 3;
             userBookingData.set(from, booking);
+            await msg.reply('Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
+            return;
+        }
+        // Step jam selesai
+        if (booking && booking.step === 3) {
+            if (!/^\d{2}:\d{2}$/.test(text)) {
+                await msg.reply('Format jam salah. Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
+                return;
+            }
+            booking.jam_selesai = text;
+            booking.step = 4;
+            userBookingData.set(from, booking);
             await msg.reply('Masukkan agenda rapat:');
             return;
         }
         // Step agenda
-        if (booking && booking.step === 3) {
+        if (booking && booking.step === 4) {
             if (!text || text.length < 3) {
                 await msg.reply('Agenda rapat tidak boleh kosong. Masukkan agenda rapat:');
                 return;
             }
             booking.agenda = text;
-            booking.step = 4;
+            booking.step = 5;
             userBookingData.set(from, booking);
-            // Ubah prompt agar user memilih dengan huruf
             await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
             return;
         }
         // Step ruang
-        if (booking && booking.step === 4) {
+        if (booking && booking.step === 5) {
             let ruang = '';
             if (text === 'a') ruang = 'Growth';
             else if (text === 'b') ruang = 'Harmony';
@@ -304,14 +316,13 @@ Ketik angka sesuai pilihan.`;
                 return;
             }
             booking.ruang = ruang;
-            booking.step = 5;
+            booking.step = 6;
             userBookingData.set(from, booking);
-            // Tanyakan kebutuhan link zoom meeting
             await msg.reply('Apakah butuh link Zoom Meeting? (Y/N)');
             return;
         }
         // Step butuh link zoom meeting (Y/N)
-        if (booking && booking.step === 5) {
+        if (booking && booking.step === 6) {
             if (text === 'y' || text === 'ya') {
                 booking.butuh_zoom = true;
             } else if (text === 'n' || text === 'tidak') {
@@ -320,98 +331,141 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh link Zoom Meeting? (Y/N)');
                 return;
             }
-            booking.step = 6;
+            booking.step = 7;
             userBookingData.set(from, booking);
-            // Lanjut ke pertanyaan konsumsi
             await msg.reply('Apakah butuh konsumsi? (Y/N)');
             return;
         }
         // Step konsumsi (Y/N)
-        if (booking && booking.step === 6) {
+        if (booking && booking.step === 7) {
             if (text === 'y' || text === 'ya') {
                 booking.butuh_konsumsi = true;
-                booking.step = 7;
+                booking.step = 8;
                 userBookingData.set(from, booking);
                 await msg.reply('Sebutkan detail konsumsi yang diminta (format teks, contoh: "Snack dan kopi untuk 10 orang"):');
                 return;
             } else if (text === 'n' || text === 'tidak') {
                 booking.butuh_konsumsi = false;
                 booking.konsumsi_detail = '';
-                booking.step = 8;
+                booking.step = 9;
                 userBookingData.set(from, booking);
-                // langsung ke proses simpan
+                // langsung ke proses konfirmasi
             } else {
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh konsumsi? (Y/N)');
                 return;
             }
         }
         // Step detail konsumsi
-        if (booking && booking.step === 7) {
+        if (booking && booking.step === 8) {
             if (!text || text.length < 3) {
                 await msg.reply('Detail konsumsi tidak boleh kosong. Sebutkan detail konsumsi yang diminta:');
                 return;
             }
             booking.konsumsi_detail = text;
-            booking.step = 8;
+            booking.step = 9;
             userBookingData.set(from, booking);
-            // lanjut ke proses simpan
+            // lanjut ke proses konfirmasi
         }
-        // Step simpan booking (step 8)
-        if (booking && booking.step === 8) {
-            // Ambil nama PIC dan nomor HP dari context
-            const userData = getUserFromContext(nomor);
-            let pic_name = userData.nama;
-            let pic_nomor = nomor;
+        // Step konfirmasi sebelum simpan booking (step 9)
+        if (booking && booking.step === 9) {
+            // Tampilkan ringkasan booking untuk konfirmasi
+            let konsumsiMsg = booking.butuh_konsumsi
+                ? `Konsumsi: ${booking.konsumsi_detail}`
+                : 'Konsumsi: Tidak';
+            let zoomMsg = booking.butuh_zoom
+                ? 'Butuh link Zoom Meeting: Ya'
+                : 'Butuh link Zoom Meeting: Tidak';
 
-            // Simpan ke file rapat.json
-            let rapatList = [];
-            try {
-                if (fs.existsSync('./rapat.json')) {
-                    rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
+            let ringkasan =
+                `Mohon konfirmasi booking berikut:\n` +
+                `Tanggal   : ${booking.tanggal}\n` +
+                `Jam Mulai : ${booking.jam}\n` +
+                `Jam Selesai: ${booking.jam_selesai}\n` +
+                `Agenda    : ${booking.agenda}\n` +
+                `Ruang     : ${booking.ruang}\n` +
+                `${zoomMsg}\n${konsumsiMsg}\n\n` +
+                `Ketik Y untuk simpan, N untuk batalkan.`;
+            booking.step = 10;
+            userBookingData.set(from, booking);
+            await msg.reply(ringkasan);
+            return;
+        }
+        // Step simpan booking (step 10)
+        if (booking && booking.step === 10) {
+            if (text === 'y' || text === 'ya') {
+                // Ambil nama PIC dan nomor HP dari context
+                const userData = getUserFromContext(nomor);
+                let pic_name = userData.nama;
+                let pic_nomor = nomor;
+
+                // Simpan ke file rapat.json
+                let rapatList = [];
+                try {
+                    if (fs.existsSync('./rapat.json')) {
+                        rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
+                    }
+                } catch { }
+                rapatList.push({
+                    tanggal: booking.tanggal,
+                    jam: booking.jam,
+                    jam_selesai: booking.jam_selesai,
+                    agenda: booking.agenda,
+                    ruang: booking.ruang,
+                    user: from,
+                    pic_name,
+                    pic_nomor,
+                    butuh_zoom: booking.butuh_zoom || false,
+                    butuh_konsumsi: booking.butuh_konsumsi,
+                    konsumsi_detail: booking.konsumsi_detail || ''
+                });
+                fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
+                userBookingData.delete(from);
+
+                let konsumsiMsg = '';
+                if (booking.butuh_konsumsi) {
+                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}`;
+                } else {
+                    konsumsiMsg = 'Konsumsi: Tidak';
                 }
-            } catch { }
-            rapatList.push({
-                tanggal: booking.tanggal,
-                jam: booking.jam,
-                agenda: booking.agenda,
-                ruang: booking.ruang,
-                user: from,
-                pic_name,
-                pic_nomor,
-                butuh_zoom: booking.butuh_zoom || false,
-                butuh_konsumsi: booking.butuh_konsumsi,
-                konsumsi_detail: booking.konsumsi_detail || ''
-            });
-            fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
-            userBookingData.delete(from);
+                let zoomMsg = '';
+                if (booking.butuh_zoom) {
+                    zoomMsg = 'Butuh link Zoom Meeting: Ya';
+                } else {
+                    zoomMsg = 'Butuh link Zoom Meeting: Tidak';
+                }
 
-            let konsumsiMsg = '';
-            if (booking.butuh_konsumsi) {
-                konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}`;
-            } else {
-                konsumsiMsg = 'Konsumsi: Tidak';
-            }
-            let zoomMsg = '';
-            if (booking.butuh_zoom) {
-                zoomMsg = 'Butuh link Zoom Meeting: Ya';
-            } else {
-                zoomMsg = 'Butuh link Zoom Meeting: Tidak';
-            }
-
-            await msg.reply(
-                `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}\n${konsumsiMsg}`
-            );
-            // Tampilkan menu booking lagi
-            const submenuMsg =
-                `*BOOKING RUANG RAPAT*
+                await msg.reply(
+                    `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}\n${konsumsiMsg}`
+                );
+                // Tampilkan menu booking lagi
+                const submenuMsg =
+                    `*BOOKING RUANG RAPAT*
 1. List rapat yang akan datang
 2. Booking ruang rapat
 3. Cancel booking rapat
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
-            await msg.reply(submenuMsg);
-            return;
+                await msg.reply(submenuMsg);
+                return;
+            } else if (text === 'n' || text === 'tidak') {
+                userBookingData.delete(from);
+                await msg.reply('Booking rapat dibatalkan.');
+                // Tampilkan menu booking lagi
+                const submenuMsg =
+                    `*BOOKING RUANG RAPAT*
+1. List rapat yang akan datang
+2. Booking ruang rapat
+3. Cancel booking rapat
+9. Kembali ke menu utama
+0. Keluar menu
+Ketik angka sesuai pilihan.`;
+                await msg.reply(submenuMsg);
+                return;
+            } else {
+                await msg.reply('Jawab dengan Y (ya) atau N (tidak) untuk konfirmasi booking.');
+                return;
+            }
         }
     }
 
