@@ -124,6 +124,10 @@ Ketik angka sesuai pilihan.`;
                 rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
             }
         } catch { }
+        // Filter hanya rapat dari hari ini ke depan
+        const today = dayjs().format('YYYY-MM-DD');
+        rapatList = rapatList.filter(r => r.tanggal >= today);
+
         if (rapatList.length === 0) {
             await msg.reply('Belum ada rapat yang terdaftar.');
         } else {
@@ -185,22 +189,59 @@ Ketik angka sesuai pilihan.`;
             booking.agenda = text;
             booking.step = 4;
             userBookingData.set(from, booking);
-            // Ubah prompt agar user memilih dengan angka
-            await msg.reply('Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
+            // Ubah prompt agar user memilih dengan huruf
+            await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
             return;
         }
         // Step ruang
         if (booking && booking.step === 4) {
             let ruang = '';
-            if (text === '1') ruang = 'Growth';
-            else if (text === '2') ruang = 'Harmony';
-            else if (text === '3') ruang = 'Ruang PAC';
+            if (text === 'a') ruang = 'Growth';
+            else if (text === 'b') ruang = 'Harmony';
+            else if (text === 'c') ruang = 'Ruang PAC';
             else {
-                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
+                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
                 return;
             }
             booking.ruang = ruang;
-
+            booking.step = 5;
+            userBookingData.set(from, booking);
+            // Tanyakan kebutuhan konsumsi
+            await msg.reply('Apakah butuh konsumsi? (Y/N)');
+            return;
+        }
+        // Step konsumsi (Y/N)
+        if (booking && booking.step === 5) {
+            if (text === 'y' || text === 'ya') {
+                booking.butuh_konsumsi = true;
+                booking.step = 6;
+                userBookingData.set(from, booking);
+                await msg.reply('Sebutkan detail konsumsi yang diminta (format teks, contoh: "Snack dan kopi untuk 10 orang"):');
+                return;
+            } else if (text === 'n' || text === 'tidak') {
+                booking.butuh_konsumsi = false;
+                booking.konsumsi_detail = '';
+                booking.step = 7;
+                userBookingData.set(from, booking);
+                // langsung ke proses simpan
+            } else {
+                await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh konsumsi? (Y/N)');
+                return;
+            }
+        }
+        // Step detail konsumsi
+        if (booking && booking.step === 6) {
+            if (!text || text.length < 3) {
+                await msg.reply('Detail konsumsi tidak boleh kosong. Sebutkan detail konsumsi yang diminta:');
+                return;
+            }
+            booking.konsumsi_detail = text;
+            booking.step = 7;
+            userBookingData.set(from, booking);
+            // lanjut ke proses simpan
+        }
+        // Step simpan booking (step 7)
+        if (booking && booking.step === 7) {
             // Ambil nama PIC dan nomor HP dari context
             const userData = getUserFromContext(nomor);
             let pic_name = userData.nama;
@@ -219,12 +260,24 @@ Ketik angka sesuai pilihan.`;
                 agenda: booking.agenda,
                 ruang: booking.ruang,
                 user: from,
-                pic_name,    // simpan nama PIC
-                pic_nomor    // simpan nomor HP PIC
+                pic_name,
+                pic_nomor,
+                butuh_konsumsi: booking.butuh_konsumsi,
+                konsumsi_detail: booking.konsumsi_detail || ''
             });
             fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
             userBookingData.delete(from);
-            await msg.reply(`Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}`);
+
+            let konsumsiMsg = '';
+            if (booking.butuh_konsumsi) {
+                konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}`;
+            } else {
+                konsumsiMsg = 'Konsumsi: Tidak';
+            }
+
+            await msg.reply(
+                `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${konsumsiMsg}`
+            );
             // Tampilkan menu booking lagi
             const submenuMsg =
                 `*BOOKING RUANG RAPAT*
