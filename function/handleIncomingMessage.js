@@ -264,6 +264,11 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply('Format tanggal salah. Masukkan tanggal rapat (format: YYYY-MM-DD):');
                 return;
             }
+            const today = dayjs().format('YYYY-MM-DD');
+            if (text < today) {
+                await msg.reply('Tanggal rapat tidak boleh sebelum hari ini. Masukkan tanggal rapat (format: YYYY-MM-DD):');
+                return;
+            }
             booking.tanggal = text;
             booking.step = 2;
             userBookingData.set(from, booking);
@@ -276,7 +281,18 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply('Format jam salah. Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
                 return;
             }
-            booking.jam = text;
+            // Validasi jam mulai tidak boleh sebelum waktu sekarang jika tanggal hari ini
+            const now = dayjs();
+            const tanggalBooking = booking.tanggal;
+            const jamBooking = text;
+            if (tanggalBooking === dayjs().format('YYYY-MM-DD')) {
+                const jamNow = now.format('HH:mm');
+                if (jamBooking < jamNow) {
+                    await msg.reply('Jam mulai tidak boleh sebelum waktu sekarang. Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
+                    return;
+                }
+            }
+            booking.jam = jamBooking;
             booking.step = 3;
             userBookingData.set(from, booking);
             await msg.reply('Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
@@ -288,7 +304,18 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply('Format jam salah. Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
                 return;
             }
-            booking.jam_selesai = text;
+            // Validasi jam selesai harus lebih besar dari jam mulai
+            const jamMulai = booking.jam;
+            const jamSelesai = text;
+            const toMinutes = jam => {
+                const [h, m] = jam.split(':').map(Number);
+                return h * 60 + m;
+            };
+            if (toMinutes(jamSelesai) <= toMinutes(jamMulai)) {
+                await msg.reply('Jam selesai harus lebih besar dari jam mulai. Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
+                return;
+            }
+            booking.jam_selesai = jamSelesai;
             booking.step = 4;
             userBookingData.set(from, booking);
             await msg.reply('Masukkan agenda rapat:');
