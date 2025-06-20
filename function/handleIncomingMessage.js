@@ -357,22 +357,9 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     }
 
     await msg.reply(response);
+    greetedNumbers.add(from);
 
     // Simpan pertanyaan & jawaban terakhir user
     chatHistory.set(from, { question: text, answer: response });
 
-    // Jika bukan pertanyaan dan ini chat pertama dari nomor tsb, tetap kirim perkenalan (opsional)
-    if (!greetedNumbers.has(from)) {
-        const introMsg =
-            "Halo! 👋\n" +
-            "Saya adalah asisten otomatis WhatsApp PT PEMA.\n" +
-            "Silakan ajukan pertanyaan apa saja, saya akan mencoba membantu dengan AI.\n\n" +
-            "Terima kasih.";
-        try {
-            await msg.reply(introMsg);
-            greetedNumbers.add(from);
-        } catch (err) {
-            console.error('❌ Gagal kirim pesan perkenalan:', err.message);
-        }
-    }
 }
