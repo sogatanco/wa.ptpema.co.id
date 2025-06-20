@@ -225,16 +225,19 @@ Ketik angka sesuai pilihan.`;
                 ruangMap[r.ruang].push({ ...r, idx: idx + 1 });
             });
 
+            // Fungsi untuk meratakan label (10 karakter)
+            const padLabel = label => (label + '          ').slice(0, 10);
+
             let listMsg = '*Daftar Rapat Yang Akan Datang (Berdasarkan Ruang):*\n';
             Object.keys(ruangMap).forEach(ruang => {
                 listMsg += `\n*${ruang}*\n`;
                 ruangMap[ruang].forEach(r => {
                     listMsg += `#${r.idx}\n`;
-                    listMsg += `Tanggal : ${r.tanggal}\n`;
-                    listMsg += `Jam     : ${r.jam}\n`;
-                    listMsg += `Agenda  : ${r.agenda}\n`;
-                    if (r.pic_name) listMsg += `PIC     : ${r.pic_name}\n`;
-                    if (r.pic_nomor) listMsg += `No HP   : ${r.pic_nomor}\n`;
+                    listMsg += `${padLabel('Tanggal')}: ${r.tanggal}\n`;
+                    listMsg += `${padLabel('Jam')}: ${r.jam}\n`;
+                    listMsg += `${padLabel('Agenda')}: ${r.agenda}\n`;
+                    if (r.pic_name) listMsg += `${padLabel('PIC')}: ${r.pic_name}\n`;
+                    if (r.pic_nomor) listMsg += `${padLabel('No HP')}: ${r.pic_nomor}\n`;
                     listMsg += '\n';
                 });
             });
