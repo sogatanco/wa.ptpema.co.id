@@ -218,15 +218,25 @@ Ketik angka sesuai pilihan.`;
         if (rapatList.length === 0) {
             await msg.reply('Belum ada rapat yang terdaftar.');
         } else {
-            let listMsg = '*Daftar Rapat Yang Akan Datang:*\n';
+            // Kelompokkan berdasarkan ruang
+            const ruangMap = {};
             rapatList.forEach((r, idx) => {
-                listMsg += `\n${idx + 1}.\n`;
-                listMsg += `Tanggal : ${r.tanggal}\n`;
-                listMsg += `Jam     : ${r.jam}\n`;
-                listMsg += `Agenda  : ${r.agenda}\n`;
-                listMsg += `Ruang   : ${r.ruang}\n`;
-                if (r.pic_name) listMsg += `PIC     : ${r.pic_name}\n`;
-                if (r.pic_nomor) listMsg += `No HP   : ${r.pic_nomor}\n`;
+                if (!ruangMap[r.ruang]) ruangMap[r.ruang] = [];
+                ruangMap[r.ruang].push({ ...r, idx: idx + 1 });
+            });
+
+            let listMsg = '*Daftar Rapat Yang Akan Datang (Berdasarkan Ruang):*\n';
+            Object.keys(ruangMap).forEach(ruang => {
+                listMsg += `\n*${ruang}*\n`;
+                ruangMap[ruang].forEach(r => {
+                    listMsg += `#${r.idx}\n`;
+                    listMsg += `Tanggal : ${r.tanggal}\n`;
+                    listMsg += `Jam     : ${r.jam}\n`;
+                    listMsg += `Agenda  : ${r.agenda}\n`;
+                    if (r.pic_name) listMsg += `PIC     : ${r.pic_name}\n`;
+                    if (r.pic_nomor) listMsg += `No HP   : ${r.pic_nomor}\n`;
+                    listMsg += '\n';
+                });
             });
             await msg.reply(listMsg);
         }
