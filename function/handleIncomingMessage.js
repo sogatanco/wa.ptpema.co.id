@@ -4,6 +4,7 @@ import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
+import { handleMenu, userMenuState } from './menuHandler.js';
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -63,75 +64,37 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
 
-    // Handler menu utama
-    if (text === 'menu') {
-        userMenuState.set(from, 'main');
-        const menuMsg =
-            `*MENU UTAMA*
-1. Booking Ruang Rapat
-2. Zoom Meeting
-3. Persetujuan saya
-4. Keluar`;
-        await msg.reply(menuMsg);
-        return;
+    // Gunakan pengecekan variasi nomor
+    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
+
+    // Optimasi: command handling lebih rapi
+    // 1. Menu & submenu (hanya untuk nomor terdaftar)
+    if (isTerdaftar) {
+        // Menu utama & submenu
+        if (text === 'menu' || await handleMenu(msg, from, text)) return;
+
+        // Zoom meeting command
+        const isZoomPrompt =
+            /^buat (zoom )?meeting\b/.test(text) ||
+            (text.includes('zoom') && text.includes('meeting')) ||
+            /create.*zoom.*meeting/i.test(text) ||
+            /schedule.*zoom/i.test(text);
+
+        if (isZoomPrompt) {
+            await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
+            return;
+        }
     }
 
-    // Handler submenu Booking Ruang Rapat
-    if (userMenuState.get(from) === 'main' && text === '1') {
-        userMenuState.set(from, 'booking');
-        const submenuMsg =
-            `*BOOKING RUANG RAPAT*
-1. List rapat yang akan datang
-2. Booking ruang rapat
-Ketik angka sesuai pilihan.`;
-        await msg.reply(submenuMsg);
-        return;
-    }
-
-    // Handler submenu Booking Ruang Rapat: List rapat yang akan datang
-    if (userMenuState.get(from) === 'booking' && text === '1') {
-        // TODO: tampilkan list rapat yang akan datang
-        await msg.reply('Berikut adalah daftar rapat yang akan datang:\n- (dummy data)');
-        // Tetap di submenu booking
-        return;
-    }
-
-    // Handler submenu Booking Ruang Rapat: Booking ruang rapat
-    if (userMenuState.get(from) === 'booking' && text === '2') {
-        // TODO: proses booking ruang rapat
-        await msg.reply('Silakan masukkan detail booking ruang rapat Anda.');
-        // Tetap di submenu booking
-        return;
-    }
-
-    // Handler keluar dari menu
-    if ((userMenuState.get(from) === 'main' || userMenuState.get(from) === 'booking') && text === '4') {
-        userMenuState.delete(from);
-        await msg.reply('Anda telah keluar dari menu.');
-        return;
-    }
+    // Ambil history terakhir user (pertanyaan & jawaban sebelumnya)
+    let lastHistory = chatHistory.get(from) || null;
+    const kataTanya = /^(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
+    const isRelated = lastHistory && kataTanya.test(text);
 
     // Gabungkan riwayat chat sebagai konteks tambahan hanya jika berkaitan
     let fullPrompt = text;
     if (isRelated) {
-        // Gunakan format: "User: {pertanyaan sebelumnya}\nAI: {jawaban sebelumnya}\nUser: {pertanyaan sekarang}"
         fullPrompt = `User: ${lastHistory.question}\nAI: ${lastHistory.answer}\nUser: ${text}`;
-    }
-
-    // Gunakan pengecekan variasi nomor
-    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
-    console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
-
-    // Deteksi perintah zoom meeting lebih luas (bisa bahasa Inggris/campuran)
-    const isZoomPrompt =
-        /^buat (zoom )?meeting\b/.test(text) ||
-        (text.includes('zoom') && text.includes('meeting')) ||
-        /create.*zoom.*meeting/i.test(text) ||
-        /schedule.*zoom/i.test(text);
-
-    if (isTerdaftar && isZoomPrompt) {
-        await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
-        return;
     }
 
     // Pilih context file sesuai status nomor pengirim
