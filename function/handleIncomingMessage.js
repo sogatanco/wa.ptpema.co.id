@@ -4,7 +4,6 @@ import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
-import { handleMenu, userMenuState } from './menuHandler.js';
 
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -21,8 +20,6 @@ function loadNomorTerdaftar() {
 }
 loadNomorTerdaftar();
 setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
-
-// Tambahkan di atas: Map untuk menyimpan state menu per user
 
 async function handleFallbackResponse({ msg, fullPrompt, GEMINI_API_KEY, greetedNumbers, from, text }) {
     const fallbackResponse = await askGeminiFlashWithoutContext(fullPrompt, GEMINI_API_KEY);
@@ -62,38 +59,64 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     ];
 
     const text = msg.body ? msg.body.trim().toLowerCase() : "";
-
-    // Gunakan pengecekan variasi nomor
-    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
-
-    // Optimasi: command handling lebih rapi
-    // 1. Menu & submenu (hanya untuk nomor terdaftar)
-    if (isTerdaftar) {
-        // Menu utama & submenu
-        if (text === 'menu' || await handleMenu(msg, from, text)) return;
-
-        // Zoom meeting command
-        const isZoomPrompt =
-            /^buat (zoom )?meeting\b/.test(text) ||
-            (text.includes('zoom') && text.includes('meeting')) ||
-            /create.*zoom.*meeting/i.test(text) ||
-            /schedule.*zoom/i.test(text);
-
-        if (isZoomPrompt) {
-            await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
-            return;
-        }
-    }
-
-    // Ambil history terakhir user (pertanyaan & jawaban sebelumnya)
     let lastHistory = chatHistory.get(from) || null;
     const kataTanya = /^(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
     const isRelated = lastHistory && kataTanya.test(text);
 
+    // Menu utama
+    if (text === 'menu') {
+        const menuMsg =
+            `*MENU UTAMA*
+                1. Booking Ruang Rapat
+                2. Zoom Meeting
+                4. Keluar`;
+        await msg.reply(menuMsg);
+        return;
+    }
+
+    // Handler untuk pilihan 1 (Booking Ruang Rapat)
+    if (text === '1') {
+        const submenuMsg =
+            `*BOOKING RUANG RAPAT*
+1. List rapat yang akan datang
+2. Booking ruang rapat
+Ketik angka sesuai pilihan.`;
+        await msg.reply(submenuMsg);
+        return;
+    }
+
+    // Handler untuk keluar dari submenu ke menu utama
+    if (text === 'back' || text === 'kembali') {
+        const menuMsg =
+`*MENU UTAMA*
+1. Booking Ruang Rapat
+2. Zoom Meeting
+4. Keluar`;
+        await msg.reply('Anda kembali ke menu utama.\n\n' + menuMsg);
+        return;
+    }
+
     // Gabungkan riwayat chat sebagai konteks tambahan hanya jika berkaitan
     let fullPrompt = text;
     if (isRelated) {
+        // Gunakan format: "User: {pertanyaan sebelumnya}\nAI: {jawaban sebelumnya}\nUser: {pertanyaan sekarang}"
         fullPrompt = `User: ${lastHistory.question}\nAI: ${lastHistory.answer}\nUser: ${text}`;
+    }
+
+    // Gunakan pengecekan variasi nomor
+    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
+    console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
+
+    // Deteksi perintah zoom meeting lebih luas (bisa bahasa Inggris/campuran)
+    const isZoomPrompt =
+        /^buat (zoom )?meeting\b/.test(text) ||
+        (text.includes('zoom') && text.includes('meeting')) ||
+        /create.*zoom.*meeting/i.test(text) ||
+        /schedule.*zoom/i.test(text);
+
+    if (isTerdaftar && isZoomPrompt) {
+        await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
+        return;
     }
 
     // Pilih context file sesuai status nomor pengirim
