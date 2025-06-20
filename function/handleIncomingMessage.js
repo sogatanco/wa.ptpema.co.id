@@ -185,7 +185,8 @@ Ketik angka sesuai pilihan.`;
             booking.agenda = text;
             booking.step = 4;
             userBookingData.set(from, booking);
-            await msg.reply('Pilih ruang rapat(Growth, Harmony, Ruang PAC): ');
+            // Ubah prompt agar user memilih dengan angka
+            await msg.reply('Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
             return;
         }
         // Step ruang
