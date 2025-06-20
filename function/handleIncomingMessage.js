@@ -1,7 +1,8 @@
 import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import {
-    loadNomorTerdaftar as loadNomorTerdaftarUtil
+    loadNomorTerdaftar as loadNomorTerdaftarUtil,
+    getUserFromContext // tambahkan import ini
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
 import fs from 'fs';
@@ -64,12 +65,13 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     let lastHistory = chatHistory.get(from) || null;
     const kataTanya = /^(siapa|apa|dimana|kapan|mengapa|bagaimana|kenapa|siapa yang)/i;
     const isRelated = lastHistory && kataTanya.test(text);
+    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
 
     // Menu utama
-    if (text === 'menu') {
+    if (text === 'menu' & isTerdaftar) {
         userMenuState.set(from, 'main');
         const menuMsg =
-`*MENU UTAMA*
+            `*MENU UTAMA*
 1. Booking Ruang Rapat
 2. Zoom Meeting
 3. Keluar`;
@@ -82,7 +84,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         userMenuState.set(from, 'booking');
         userBookingData.delete(from); // reset data booking jika ada
         const submenuMsg =
-`*BOOKING RUANG RAPAT*
+            `*BOOKING RUANG RAPAT*
 1. List rapat yang akan datang
 2. Booking ruang rapat
 9. Kembali ke menu utama
@@ -97,7 +99,7 @@ Ketik angka sesuai pilihan.`;
         userMenuState.set(from, 'main');
         userBookingData.delete(from);
         const menuMsg =
-`*MENU UTAMA*
+            `*MENU UTAMA*
 1. Booking Ruang Rapat
 2. Zoom Meeting
 3. Keluar`;
@@ -121,13 +123,19 @@ Ketik angka sesuai pilihan.`;
             if (fs.existsSync('./rapat.json')) {
                 rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
             }
-        } catch {}
+        } catch { }
         if (rapatList.length === 0) {
             await msg.reply('Belum ada rapat yang terdaftar.');
         } else {
             let listMsg = '*Daftar Rapat Yang Akan Datang:*\n';
             rapatList.forEach((r, idx) => {
-                listMsg += `${idx + 1}. ${r.tanggal} ${r.jam} | ${r.agenda} | Ruang: ${r.ruang}\n`;
+                listMsg += `\n${idx + 1}.\n`;
+                listMsg += `Tanggal : ${r.tanggal}\n`;
+                listMsg += `Jam     : ${r.jam}\n`;
+                listMsg += `Agenda  : ${r.agenda}\n`;
+                listMsg += `Ruang   : ${r.ruang}\n`;
+                if (r.pic_name) listMsg += `PIC     : ${r.pic_name}\n`;
+                if (r.pic_nomor) listMsg += `No HP   : ${r.pic_nomor}\n`;
             });
             await msg.reply(listMsg);
         }
@@ -177,40 +185,48 @@ Ketik angka sesuai pilihan.`;
             booking.agenda = text;
             booking.step = 4;
             userBookingData.set(from, booking);
-            await msg.reply('Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
+            await msg.reply('Pilih ruang rapat(Growth, Harmony, Ruang PAC): ');
             return;
         }
         // Step ruang
         if (booking && booking.step === 4) {
             let ruang = '';
-            if (['1', 'growth'].includes(text)) ruang = 'Growth';
-            else if (['2', 'harmony'].includes(text)) ruang = 'Harmony';
-            else if (['3', 'ruang pac', 'pac'].includes(text)) ruang = 'Ruang PAC';
+            if (text === '1') ruang = 'Growth';
+            else if (text === '2') ruang = 'Harmony';
+            else if (text === '3') ruang = 'Ruang PAC';
             else {
-                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka atau nama ruang sesuai pilihan.');
+                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\n1. Growth\n2. Harmony\n3. Ruang PAC\nKetik angka sesuai pilihan.');
                 return;
             }
             booking.ruang = ruang;
+
+            // Ambil nama PIC dan nomor HP dari context
+            const userData = getUserFromContext(nomor);
+            let pic_name = userData.nama;
+            let pic_nomor = nomor;
+
             // Simpan ke file rapat.json
             let rapatList = [];
             try {
                 if (fs.existsSync('./rapat.json')) {
                     rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
                 }
-            } catch {}
+            } catch { }
             rapatList.push({
                 tanggal: booking.tanggal,
                 jam: booking.jam,
                 agenda: booking.agenda,
                 ruang: booking.ruang,
-                user: from
+                user: from,
+                pic_name,    // simpan nama PIC
+                pic_nomor    // simpan nomor HP PIC
             });
             fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
             userBookingData.delete(from);
             await msg.reply(`Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}`);
             // Tampilkan menu booking lagi
             const submenuMsg =
-`*BOOKING RUANG RAPAT*
+                `*BOOKING RUANG RAPAT*
 1. List rapat yang akan datang
 2. Booking ruang rapat
 9. Kembali ke menu utama
@@ -229,7 +245,7 @@ Ketik angka sesuai pilihan.`;
     }
 
     // Gunakan pengecekan variasi nomor
-    const isTerdaftar = nomorVariasi.some(n => nomorTerdaftar.has(n));
+
     console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
 
     // Deteksi perintah zoom meeting lebih luas (bisa bahasa Inggris/campuran)
