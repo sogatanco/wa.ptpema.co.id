@@ -298,4 +298,3 @@ Ketik angka sesuai pilihan.`;
     greetedNumbers.add(from);
     chatHistory.set(from, { question: text, answer: response });
 }
-  
