@@ -23,7 +23,6 @@ loadNomorTerdaftar();
 setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 
 // Tambahkan di atas: Map untuk menyimpan state menu per user
-const userMenuState = new Map();
 
 async function handleFallbackResponse({ msg, fullPrompt, GEMINI_API_KEY, greetedNumbers, from, text }) {
     const fallbackResponse = await askGeminiFlashWithoutContext(fullPrompt, GEMINI_API_KEY);
