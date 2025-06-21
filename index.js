@@ -56,6 +56,14 @@ client.on('disconnected', () => {
     isReady = false;
 });
 
+client.on('loading_screen', (percent, message) => {
+    console.log(`⏳ Loading WhatsApp: ${percent}% - ${message}`);
+});
+
+client.on('error', (err) => {
+    console.error('❌ WhatsApp client error:', err);
+});
+
 // Tambahkan log sebelum dan sesudah inisialisasi
 console.log('⏳ Inisialisasi WhatsApp client...');
 client.initialize();

@@ -76,6 +76,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 1. Booking Ruang Rapat
 2. Zoom Meeting
 3. Keluar`;
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply(menuMsg);
         return;
     }
@@ -92,6 +93,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply(submenuMsg);
         return;
     }
@@ -111,6 +113,7 @@ Ketik angka sesuai pilihan.`;
             .filter(r => r.user === from);
 
         if (userRapat.length === 0) {
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Anda belum pernah membuat booking rapat.');
             return;
         }
@@ -121,6 +124,7 @@ Ketik angka sesuai pilihan.`;
         listMsg += 'Ketik ID rapat yang ingin dibatalkan:';
         userMenuState.set(from, 'cancel-booking-select');
         userBookingData.set(from, { step: 'select-cancel', userRapat });
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply(listMsg);
         return;
     }
@@ -131,16 +135,19 @@ Ketik angka sesuai pilihan.`;
         if (booking && booking.step === 'select-cancel') {
             const id = parseInt(text);
             if (isNaN(id)) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('ID tidak valid. Ketik ID rapat yang ingin dibatalkan:');
                 return;
             }
             const rapat = booking.userRapat.find(r => r.id === id);
             if (!rapat) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('ID tidak ditemukan. Ketik ID rapat yang ingin dibatalkan:');
                 return;
             }
             // Konfirmasi pembatalan
             userBookingData.set(from, { ...booking, step: 'confirm-cancel', cancelId: id });
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply(`Apakah Anda yakin ingin membatalkan booking rapat dengan ID ${id}? (Y/N)`);
             return;
         }
@@ -159,6 +166,7 @@ Ketik angka sesuai pilihan.`;
                 } catch { }
                 const idx = booking.cancelId - 1;
                 if (!rapatList[idx] || rapatList[idx].user !== from) {
+                    await new Promise(res => setTimeout(res, 2000));
                     await msg.reply('Booking tidak ditemukan atau bukan milik Anda.');
                     userMenuState.set(from, 'booking');
                     userBookingData.delete(from);
@@ -166,16 +174,19 @@ Ketik angka sesuai pilihan.`;
                 }
                 rapatList.splice(idx, 1);
                 fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Booking rapat berhasil dibatalkan.');
                 userMenuState.set(from, 'booking');
                 userBookingData.delete(from);
                 return;
             } else if (text.toLowerCase() === 'n' || text.toLowerCase() === 'tidak') {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Pembatalan booking dibatalkan.');
                 userMenuState.set(from, 'booking');
                 userBookingData.delete(from);
                 return;
             } else {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah Anda yakin ingin membatalkan booking rapat ini? (Y/N)');
                 return;
             }
@@ -191,6 +202,7 @@ Ketik angka sesuai pilihan.`;
 1. Booking Ruang Rapat
 2. Zoom Meeting
 3. Keluar`;
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply('Anda kembali ke menu utama.\n\n' + menuMsg);
         return;
     }
@@ -199,6 +211,7 @@ Ketik angka sesuai pilihan.`;
     if (userMenuState.get(from) === 'booking' && text === '0') {
         userMenuState.delete(from);
         userBookingData.delete(from);
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply('Anda telah keluar dari menu.');
         return;
     }
@@ -217,6 +230,7 @@ Ketik angka sesuai pilihan.`;
         rapatList = rapatList.filter(r => r.tanggal >= today);
 
         if (rapatList.length === 0) {
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Belum ada rapat yang terdaftar.');
         } else {
             // Kelompokkan berdasarkan ruang
@@ -243,6 +257,7 @@ Ketik angka sesuai pilihan.`;
                     listMsg += '\n';
                 });
             });
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply(listMsg);
         }
         return;
@@ -251,6 +266,7 @@ Ketik angka sesuai pilihan.`;
     // Handler Booking ruang rapat (mulai step by step)
     if (userMenuState.get(from) === 'booking' && text === '2') {
         userBookingData.set(from, { step: 1 });
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply('Masukkan tanggal rapat (format: YYYY-MM-DD):');
         return;
     }
@@ -261,23 +277,27 @@ Ketik angka sesuai pilihan.`;
         if (booking && booking.step === 1) {
             // Validasi tanggal
             if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Format tanggal salah. Masukkan tanggal rapat (format: YYYY-MM-DD):');
                 return;
             }
             const today = dayjs().format('YYYY-MM-DD');
             if (text < today) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Tanggal rapat tidak boleh sebelum hari ini. Masukkan tanggal rapat (format: YYYY-MM-DD):');
                 return;
             }
             booking.tanggal = text;
             booking.step = 2;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
             return;
         }
         // Step jam mulai
         if (booking && booking.step === 2) {
             if (!/^\d{2}:\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Format jam salah. Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
                 return;
             }
@@ -288,6 +308,7 @@ Ketik angka sesuai pilihan.`;
             if (tanggalBooking === dayjs().format('YYYY-MM-DD')) {
                 const jamNow = now.format('HH:mm');
                 if (jamBooking < jamNow) {
+                    await new Promise(res => setTimeout(res, 2000));
                     await msg.reply('Jam mulai tidak boleh sebelum waktu sekarang. Masukkan jam mulai rapat (format: HH:mm, contoh: 13:30):');
                     return;
                 }
@@ -295,12 +316,14 @@ Ketik angka sesuai pilihan.`;
             booking.jam = jamBooking;
             booking.step = 3;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
             return;
         }
         // Step jam selesai
         if (booking && booking.step === 3) {
             if (!/^\d{2}:\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Format jam salah. Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
                 return;
             }
@@ -312,24 +335,28 @@ Ketik angka sesuai pilihan.`;
                 return h * 60 + m;
             };
             if (toMinutes(jamSelesai) <= toMinutes(jamMulai)) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jam selesai harus lebih besar dari jam mulai. Masukkan jam selesai rapat (format: HH:mm, contoh: 15:00):');
                 return;
             }
             booking.jam_selesai = jamSelesai;
             booking.step = 4;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Masukkan agenda rapat:');
             return;
         }
         // Step agenda
         if (booking && booking.step === 4) {
             if (!text || text.length < 3) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Agenda rapat tidak boleh kosong. Masukkan agenda rapat:');
                 return;
             }
             booking.agenda = text;
             booking.step = 5;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
             return;
         }
@@ -340,12 +367,14 @@ Ketik angka sesuai pilihan.`;
             else if (text === 'b') ruang = 'Harmony';
             else if (text === 'c') ruang = 'Ruang PAC';
             else {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
                 return;
             }
             booking.ruang = ruang;
             booking.step = 6;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Apakah butuh link Zoom Meeting? (Y/N)');
             return;
         }
@@ -356,11 +385,13 @@ Ketik angka sesuai pilihan.`;
             } else if (text === 'n' || text === 'tidak') {
                 booking.butuh_zoom = false;
             } else {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh link Zoom Meeting? (Y/N)');
                 return;
             }
             booking.step = 7;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Apakah butuh konsumsi? (Y/N)');
             return;
         }
@@ -370,6 +401,7 @@ Ketik angka sesuai pilihan.`;
                 booking.butuh_konsumsi = true;
                 booking.step = 8;
                 userBookingData.set(from, booking);
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Sebutkan detail konsumsi yang diminta (format teks, contoh: "Snack dan kopi untuk 10 orang"):');
                 return;
             } else if (text === 'n' || text === 'tidak') {
@@ -379,6 +411,7 @@ Ketik angka sesuai pilihan.`;
                 userBookingData.set(from, booking);
                 // langsung ke proses konfirmasi
             } else {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah butuh konsumsi? (Y/N)');
                 return;
             }
@@ -386,6 +419,7 @@ Ketik angka sesuai pilihan.`;
         // Step detail konsumsi
         if (booking && booking.step === 8) {
             if (!text || text.length < 3) {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Detail konsumsi tidak boleh kosong. Sebutkan detail konsumsi yang diminta:');
                 return;
             }
@@ -415,6 +449,7 @@ Ketik angka sesuai pilihan.`;
                 `Ketik Y untuk simpan, N untuk batalkan.`;
             booking.step = 10;
             userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
             await msg.reply(ringkasan);
             return;
         }
@@ -443,6 +478,7 @@ Ketik angka sesuai pilihan.`;
                 });
                 if (conflict) {
                     userBookingData.delete(from);
+                    await new Promise(res => setTimeout(res, 2000));
                     await msg.reply('❌ Jadwal rapat bentrok/konflik dengan booking lain di ruang dan waktu yang sama. Silakan pilih waktu lain.');
                     // Tampilkan menu booking lagi
                     const submenuMsg =
@@ -453,6 +489,7 @@ Ketik angka sesuai pilihan.`;
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
+                    await new Promise(res => setTimeout(res, 2000));
                     await msg.reply(submenuMsg);
                     return;
                 }
@@ -498,10 +535,12 @@ Ketik angka sesuai pilihan.`;
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply(submenuMsg);
                 return;
             } else if (text === 'n' || text === 'tidak') {
                 userBookingData.delete(from);
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Booking rapat dibatalkan.');
                 // Tampilkan menu booking lagi
                 const submenuMsg =
@@ -512,9 +551,11 @@ Ketik angka sesuai pilihan.`;
 9. Kembali ke menu utama
 0. Keluar menu
 Ketik angka sesuai pilihan.`;
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply(submenuMsg);
                 return;
             } else {
+                await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak) untuk konfirmasi booking.');
                 return;
             }
