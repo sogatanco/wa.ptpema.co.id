@@ -56,7 +56,10 @@ client.on('disconnected', () => {
     isReady = false;
 });
 
+// Tambahkan log sebelum dan sesudah inisialisasi
+console.log('⏳ Inisialisasi WhatsApp client...');
 client.initialize();
+console.log('📡 Menunggu QR code...');
 
 const API_KEY = process.env.API_KEY; // Dari .env
 const KEY_SYS = process.env.KEY_SYS; // Dari .env
