@@ -562,7 +562,7 @@ Ketik angka sesuai pilihan.`;
                         employe_id: userData.employeeId,
                         nama: pic_name,
                         topic: booking.agenda || 'Meeting Ruang Rapat',
-                        jam: dayjsStart.format('HH:mm'),
+                        jam: meetingTime.format('HH:mm'),
                         tgl: booking.tanggal,
                         url: zoomResult.join_url || '',
                         id: zoomResult.id || '',
