@@ -13,8 +13,6 @@ export function checkMeetingConflict(logs, meetingTime, accountIdx = 1) {
     if (typeof meetingTime.format === 'function') {
         dayjsMeetingTime = meetingTime;
     } else {
-        // Anggap meetingTime adalah Date
-        const dayjs = require('dayjs');
         dayjsMeetingTime = dayjs(meetingTime);
     }
     return logs.some(m => {
@@ -128,3 +126,4 @@ export function isMeetingConflict(meetings, newMeeting) {
         return (startAMin < endBMin && endAMin > startBMin);
     });
 }
+   

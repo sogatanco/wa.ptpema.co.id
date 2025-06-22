@@ -27,8 +27,8 @@ const getZoomToken = async (accountIdx = 1) => {
     return res.data.access_token;
 };
 
-// Fungsi create meeting dengan parameter jam selesai (end_time, opsional)
-export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = null, accountIdx = 1) => {
+// Fungsi create meeting dengan parameter jam selesai (end_time, opsional) dan schedule_for
+export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = null, accountIdx = 1, scheduleForEmail = null) => {
     const token = await getZoomToken(accountIdx);
 
     // Hitung durasi
@@ -40,20 +40,33 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
         if (duration < 1) duration = 60;
     }
 
+    // Tentukan email schedule_for sesuai account
+    let schedule_for = scheduleForEmail;
+    if (!schedule_for) {
+        schedule_for = accountIdx === 2 ? 'pembangunanaceh.pema@gmail.com' : 'mitrapema@gmail.com';
+    }
+
+    const payload = {
+        topic,
+        type: 2, // 2 = Scheduled Meeting
+        start_time: start_time_iso,
+        duration,
+        timezone: 'Asia/Jakarta',
+        settings: {
+            use_pmi: true,
+            join_before_host: true,
+            waiting_room: false,
+        }
+    };
+
+    // schedule_for hanya jika accountIdx === 1
+    if (accountIdx === 1 && schedule_for) {
+        payload.schedule_for = schedule_for;
+    }
+
     const res = await axios.post(
         'https://api.zoom.us/v2/users/me/meetings',
-        {
-            topic,
-            type: 2, // 2 = Scheduled Meeting
-            start_time: start_time_iso,
-            duration,
-            timezone: 'Asia/Jakarta',
-            settings: {
-                use_pmi: true,
-                join_before_host: true,
-                waiting_room: false,
-            }
-        },
+        payload,
         {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -65,19 +78,19 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
     return res.data;
 };
 
-// Fungsi untuk handle conflict dua account
+// Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
     // Cek conflict di account 1
     const conflict1 = checkMeetingConflict(logs, new Date(start_time_iso), 1);
     if (!conflict1) {
-        // Tidak bentrok di account 1
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1), accountIdx: 1 };
+        // Tidak bentrok di account 1, gunakan schedule_for email akun 1
+        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'), accountIdx: 1 };
     }
     // Cek conflict di account 2
     const conflict2 = checkMeetingConflict(logs, new Date(start_time_iso), 2);
     if (!conflict2) {
-        // Tidak bentrok di account 2
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2), accountIdx: 2 };
+        // Tidak bentrok di account 2, gunakan schedule_for email akun 2
+        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2, 'pembangunanaceh.pema@gmail.com'), accountIdx: 2 };
     }
     // Bentrok di kedua account
     return { meeting: null, accountIdx: 0 };
