@@ -4,13 +4,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const getZoomToken = async () => {
+const getZoomToken = async (accountIdx = 1) => {
+    // Ambil credential sesuai account index (1 atau 2)
+    const accountId = accountIdx === 2 ? process.env.ZOOM_ACCOUNT_ID2 : process.env.ZOOM_ACCOUNT_ID;
+    const clientId = accountIdx === 2 ? process.env.ZOOM_CLIENT_ID2 : process.env.ZOOM_CLIENT_ID;
+    const clientSecret = accountIdx === 2 ? process.env.ZOOM_CLIENT_SECRET2 : process.env.ZOOM_CLIENT_SECRET;
+
     const data = qs.stringify({
         grant_type: 'account_credentials',
-        account_id: process.env.ZOOM_ACCOUNT_ID
+        account_id: accountId
     });
 
-    const auth = Buffer.from(`${process.env.ZOOM_CLIENT_ID}:${process.env.ZOOM_CLIENT_SECRET}`).toString('base64');
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
     const res = await axios.post('https://zoom.us/oauth/token', data, {
         headers: {
@@ -22,19 +27,29 @@ const getZoomToken = async () => {
     return res.data.access_token;
 };
 
-export const createZoomMeeting = async (topic, start_time_iso) => {
-    const token = await getZoomToken();
+// Fungsi create meeting dengan parameter jam selesai (end_time, opsional)
+export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = null, accountIdx = 1) => {
+    const token = await getZoomToken(accountIdx);
 
-     const res = await axios.post(
+    // Hitung durasi
+    let duration = 60;
+    if (end_time_iso) {
+        const start = new Date(start_time_iso);
+        const end = new Date(end_time_iso);
+        duration = Math.round((end - start) / 60000); // menit
+        if (duration < 1) duration = 60;
+    }
+
+    const res = await axios.post(
         'https://api.zoom.us/v2/users/me/meetings',
         {
             topic,
             type: 2, // 2 = Scheduled Meeting
             start_time: start_time_iso,
-            duration: 60,
+            duration,
             timezone: 'Asia/Jakarta',
             settings: {
-                use_pmi: true, // ✅ Gunakan Personal Meeting ID
+                use_pmi: true,
                 join_before_host: true,
                 waiting_room: false,
             }
@@ -48,4 +63,22 @@ export const createZoomMeeting = async (topic, start_time_iso) => {
     );
 
     return res.data;
+};
+
+// Fungsi untuk handle conflict dua account
+export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
+    // Cek conflict di account 1
+    const conflict1 = checkMeetingConflict(logs, new Date(start_time_iso), 1);
+    if (!conflict1) {
+        // Tidak bentrok di account 1
+        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1), accountIdx: 1 };
+    }
+    // Cek conflict di account 2
+    const conflict2 = checkMeetingConflict(logs, new Date(start_time_iso), 2);
+    if (!conflict2) {
+        // Tidak bentrok di account 2
+        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2), accountIdx: 2 };
+    }
+    // Bentrok di kedua account
+    return { meeting: null, accountIdx: 0 };
 };
