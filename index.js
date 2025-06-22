@@ -51,8 +51,8 @@ client.on('auth_failure', (msg) => {
     console.error('❌ Autentikasi gagal:', msg);
 });
 
-client.on('disconnected', () => {
-    console.log('⚠️ WhatsApp client terputus.');
+client.on('disconnected', (reason) => {
+    console.log('⚠️ WhatsApp client terputus.', reason);
     isReady = false;
 });
 
@@ -147,11 +147,14 @@ if (MYSQL_CONTEXT_ENABLED) {
 }
 
 // Pasang handler pada event message
-client.on('message', (msg) => handleIncomingMessage(msg, {
-    client,
-    GEMINI_API_KEY,
-    greetedNumbers
-}));
+client.on('message', (msg) => {
+    console.log('📩 Pesan masuk:', msg.body);
+    handleIncomingMessage(msg, {
+        client,
+        GEMINI_API_KEY,
+        greetedNumbers
+    });
+});
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
