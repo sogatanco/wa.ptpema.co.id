@@ -500,11 +500,23 @@ Ketik angka sesuai pilihan.`;
                 // === Tambahan: Jika butuh Zoom, buat meeting Zoom ===
                 let zoomInfo = null;
                 if (booking.butuh_zoom) {
-                    // Siapkan jam mulai & selesai dalam format ISO (ISO string UTC, sesuai zoom.js)
-                    const dayjsStart = dayjs.tz(`${booking.tanggal} ${booking.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
-                    const dayjsEnd = dayjs.tz(`${booking.tanggal} ${booking.jam_selesai}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
-                    const isoStart = dayjsStart.utc().toISOString();
-                    const isoEnd = dayjsEnd.utc().toISOString();
+                    // Siapkan jam mulai & selesai dalam format ISO (format sama seperti di zoomMeetingHandler.js)
+                    const dateStr = booking.tanggal;
+                    const jamMulai = booking.jam;
+                    const jamSelesai = booking.jam_selesai;
+
+                    // Jam mulai
+                    const dateTimeStr = `${dateStr} ${jamMulai}`;
+                    const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                    const isoStart = meetingTime.utc().format();
+
+                    // Jam selesai
+                    let isoEnd = null;
+                    if (jamSelesai) {
+                        const endDateTimeStr = `${dateStr} ${jamSelesai}`;
+                        const endTime = dayjs.tz(endDateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                        isoEnd = endTime.utc().format();
+                    }
 
                     // Ambil log Zoom
                     let logFile = './meeting_log.json';
