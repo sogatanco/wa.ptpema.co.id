@@ -521,7 +521,7 @@ Ketik angka sesuai pilihan.`;
                         booking.agenda || 'Meeting Ruang Rapat',
                         isoStart,
                         isoEnd,
-                        require('./utils.js').checkMeetingConflict,
+                        checkMeetingConflict, // gunakan import langsung, bukan require
                         logs
                     );
 
