@@ -6,6 +6,8 @@ import {
     isMeetingConflict // tambahkan import ini
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
+// Tambahkan import:
+import { createZoomMeetingWithConflict } from './zoom.js';
 import fs from 'fs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -469,7 +471,7 @@ Ketik angka sesuai pilihan.`;
                     }
                 } catch { }
 
-                // Cek konflik jadwal
+                // Cek konflik jadwal ruang rapat
                 const conflict = isMeetingConflict(rapatList, {
                     tanggal: booking.tanggal,
                     ruang: booking.ruang,
@@ -494,6 +496,71 @@ Ketik angka sesuai pilihan.`;
                     return;
                 }
 
+                // === Tambahan: Jika butuh Zoom, buat meeting Zoom ===
+                let zoomInfo = null;
+                if (booking.butuh_zoom) {
+                    // Siapkan jam mulai & selesai dalam format ISO
+                    const dayjsStart = dayjs.tz(`${booking.tanggal} ${booking.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                    const dayjsEnd = dayjs.tz(`${booking.tanggal} ${booking.jam_selesai}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                    const isoStart = dayjsStart.utc().format();
+                    const isoEnd = dayjsEnd.utc().format();
+
+                    // Ambil log Zoom
+                    let logFile = './meeting_log.json';
+                    let logs = [];
+                    if (fs.existsSync(logFile)) {
+                        try {
+                            const raw = fs.readFileSync(logFile, 'utf8');
+                            logs = JSON.parse(raw);
+                            if (!Array.isArray(logs)) logs = [];
+                        } catch { logs = []; }
+                    }
+
+                    // Cek & buat Zoom
+                    const { meeting: zoomResult, accountIdx, schedule_for } = await createZoomMeetingWithConflict(
+                        booking.agenda || 'Meeting Ruang Rapat',
+                        isoStart,
+                        isoEnd,
+                        require('./utils.js').checkMeetingConflict,
+                        logs
+                    );
+
+                    if (!zoomResult) {
+                        userBookingData.delete(from);
+                        await new Promise(res => setTimeout(res, 2000));
+                        await msg.reply('❌ Jadwal Zoom bentrok/konflik dengan meeting lain di kedua akun Zoom. Booking ruang rapat dibatalkan. Silakan pilih waktu lain.');
+                        // Tampilkan menu booking lagi
+                        const submenuMsg =
+                            `*BOOKING RUANG RAPAT*
+1. List rapat yang akan datang
+2. Booking ruang rapat
+3. Cancel booking rapat
+9. Kembali ke menu utama
+0. Keluar menu
+Ketik angka sesuai pilihan.`;
+                        await new Promise(res => setTimeout(res, 2000));
+                        await msg.reply(submenuMsg);
+                        return;
+                    }
+
+                    // Simpan log Zoom
+                    logs.push({
+                        nomor_user: from,
+                        employe_id: userData.employeeId,
+                        nama: pic_name,
+                        topic: booking.agenda || 'Meeting Ruang Rapat',
+                        jam: dayjsStart.format('HH:mm'),
+                        tgl: booking.tanggal,
+                        url: zoomResult.join_url || '',
+                        id: zoomResult.id || '',
+                        account: accountIdx,
+                        schedule_for: schedule_for
+                    });
+                    fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+                    zoomInfo = zoomResult;
+                }
+
+                // Simpan booking ruang rapat
                 rapatList.push({
                     tanggal: booking.tanggal,
                     jam: booking.jam,
@@ -505,7 +572,10 @@ Ketik angka sesuai pilihan.`;
                     pic_nomor,
                     butuh_zoom: booking.butuh_zoom || false,
                     butuh_konsumsi: booking.butuh_konsumsi,
-                    konsumsi_detail: booking.konsumsi_detail || ''
+                    konsumsi_detail: booking.konsumsi_detail || '',
+                    zoom_link: zoomInfo ? zoomInfo.join_url : '',
+                    zoom_id: zoomInfo ? (zoomInfo.personal_meeting_id || zoomInfo.id || '') : '',
+                    zoom_password: zoomInfo ? (zoomInfo.password || '') : ''
                 });
                 fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
                 userBookingData.delete(from);
@@ -517,14 +587,20 @@ Ketik angka sesuai pilihan.`;
                     konsumsiMsg = 'Konsumsi: Tidak';
                 }
                 let zoomMsg = '';
-                if (booking.butuh_zoom) {
-                    zoomMsg = 'Butuh link Zoom Meeting: Ya';
+                if (booking.butuh_zoom && zoomInfo) {
+                    zoomMsg =
+                        `Butuh link Zoom Meeting: Ya\n` +
+                        `🔗 Link: ${zoomInfo.join_url}\n` +
+                        `🆔 ID Meeting: ${zoomInfo.personal_meeting_id || zoomInfo.id || '-'}\n` +
+                        `🔑 Password: ${zoomInfo.password || '-'}\n`;
+                } else if (booking.butuh_zoom) {
+                    zoomMsg = 'Butuh link Zoom Meeting: Ya (tidak tersedia karena konflik jadwal)';
                 } else {
                     zoomMsg = 'Butuh link Zoom Meeting: Tidak';
                 }
 
                 await msg.reply(
-                    `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}\n${konsumsiMsg}`
+                    `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}${konsumsiMsg}`
                 );
                 // Tampilkan menu booking lagi
                 const submenuMsg =
