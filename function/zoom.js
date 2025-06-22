@@ -10,6 +10,11 @@ const getZoomToken = async (accountIdx = 1) => {
     const clientId = accountIdx === 2 ? process.env.ZOOM_CLIENT_ID2 : process.env.ZOOM_CLIENT_ID;
     const clientSecret = accountIdx === 2 ? process.env.ZOOM_CLIENT_SECRET2 : process.env.ZOOM_CLIENT_SECRET;
 
+    // Tambahkan validasi/debug
+    if (!accountId || !clientId || !clientSecret) {
+        throw new Error(`Zoom credentials missing for accountIdx=${accountIdx}. Pastikan .env sudah benar.`);
+    }
+
     const data = qs.stringify({
         grant_type: 'account_credentials',
         account_id: accountId
@@ -80,18 +85,13 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
-    // Cek conflict di account 1
+    // Cek conflict di account 1 (mitrapema@gmail.com)
     const conflict1 = checkMeetingConflict(logs, new Date(start_time_iso), 1);
     if (!conflict1) {
         // Tidak bentrok di account 1, gunakan schedule_for email akun 1
         return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'), accountIdx: 1 };
     }
-    // Cek conflict di account 2
-    const conflict2 = checkMeetingConflict(logs, new Date(start_time_iso), 2);
-    if (!conflict2) {
-        // Tidak bentrok di account 2, gunakan schedule_for email akun 2
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2, 'pembangunanaceh.pema@gmail.com'), accountIdx: 2 };
-    }
-    // Bentrok di kedua account
-    return { meeting: null, accountIdx: 0 };
+    // Jika bentrok, tetap pakai client 1 tapi schedule_for ke email kedua
+    return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'), accountIdx: 1 };
 };
+     
