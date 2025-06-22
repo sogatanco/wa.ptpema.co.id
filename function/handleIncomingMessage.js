@@ -500,11 +500,11 @@ Ketik angka sesuai pilihan.`;
                 // === Tambahan: Jika butuh Zoom, buat meeting Zoom ===
                 let zoomInfo = null;
                 if (booking.butuh_zoom) {
-                    // Siapkan jam mulai & selesai dalam format ISO
+                    // Siapkan jam mulai & selesai dalam format ISO (ISO string UTC, sesuai zoom.js)
                     const dayjsStart = dayjs.tz(`${booking.tanggal} ${booking.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
                     const dayjsEnd = dayjs.tz(`${booking.tanggal} ${booking.jam_selesai}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
-                    const isoStart = dayjsStart.utc().format();
-                    const isoEnd = dayjsEnd.utc().format();
+                    const isoStart = dayjsStart.utc().toISOString();
+                    const isoEnd = dayjsEnd.utc().toISOString();
 
                     // Ambil log Zoom
                     let logFile = './meeting_log.json';
@@ -522,7 +522,7 @@ Ketik angka sesuai pilihan.`;
                         booking.agenda || 'Meeting Ruang Rapat',
                         isoStart,
                         isoEnd,
-                        checkMeetingConflict, // gunakan import langsung, bukan require
+                        checkMeetingConflict,
                         logs
                     );
 
