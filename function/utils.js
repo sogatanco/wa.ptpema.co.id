@@ -7,11 +7,22 @@ export function normalizeNomor(n) {
     return (n || '').replace(/[^0-9]/g, '').replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
 }
 
-export function checkMeetingConflict(logs, meetingTime) {
+export function checkMeetingConflict(logs, meetingTime, accountIdx = 1) {
+    // Pastikan meetingTime adalah dayjs object
+    let dayjsMeetingTime;
+    if (typeof meetingTime.format === 'function') {
+        dayjsMeetingTime = meetingTime;
+    } else {
+        // Anggap meetingTime adalah Date
+        const dayjs = require('dayjs');
+        dayjsMeetingTime = dayjs(meetingTime);
+    }
     return logs.some(m => {
-        if (m.tgl !== meetingTime.format('YYYY-MM-DD')) return false;
+        // Filter hanya untuk account yang sesuai jika ada field account
+        if (m.account && m.account !== accountIdx) return false;
+        if (m.tgl !== dayjsMeetingTime.format('YYYY-MM-DD')) return false;
         const mTime = dayjs.tz(`${m.tgl} ${m.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
-        const diff = Math.abs(meetingTime.diff(mTime, 'minute'));
+        const diff = Math.abs(dayjsMeetingTime.diff(mTime, 'minute'));
         return diff < 60;
     });
 }
