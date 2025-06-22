@@ -3,7 +3,8 @@ import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js'
 import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil,
     getUserFromContext,
-    isMeetingConflict // tambahkan import ini
+    isMeetingConflict,
+    checkMeetingConflict // tambahkan import ini
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
 // Tambahkan import:
