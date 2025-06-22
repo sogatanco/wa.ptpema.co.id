@@ -92,7 +92,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
     }
 
     // Gunakan fungsi baru untuk handle dua account
-    const { meeting: zoomResult, accountIdx } = await createZoomMeetingWithConflict(
+    const { meeting: zoomResult, accountIdx, schedule_for } = await createZoomMeetingWithConflict(
         topic,
         isoTime,
         end_time_iso,
@@ -102,7 +102,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
 
     if (!zoomResult) {
         const futureMeetings = getFutureMeetings(logs);
-        let replyMsg = '❗Maaf, waktu meeting yang Anda pilih sudah dipakai di kedua akun Zoom. Silakan pilih waktu lain atau konfirmasi ke PIC terkait untuk melakukan perubahan.\n';
+        let replyMsg = '❗Maaf, waktu meeting yang Anda pilih sudah dipakai untuk kedua email Zoom (mitrapema@gmail.com & pembangunanaceh.pema@gmail.com). Silakan pilih waktu lain atau konfirmasi ke PIC terkait untuk melakukan perubahan.\n';
         if (futureMeetings.length > 0) {
             replyMsg += '\n\n📅 *Daftar Meeting Mendatang:*\n' + futureMeetings.map((m, idx) =>
                 `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   ID: ${m.id || '-'}\n   PIC: ${m.nama || '-'}\n`
@@ -128,7 +128,10 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
     }
     replyMsg += `\n`;
     replyMsg += zoomResult.join_url ? `🔗 Link: ${zoomResult.join_url}\n` : '';
-    replyMsg += zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '';
+    // Kirim ID pribadi (personal meeting ID) jika ada, jika tidak fallback ke zoomResult.id
+    replyMsg += zoomResult.personal_meeting_id
+        ? `🆔 ID Meeting (Personal): ${zoomResult.personal_meeting_id}\n`
+        : (zoomResult.id ? `🆔 ID Meeting: ${zoomResult.id}\n` : '');
     replyMsg += zoomResult.password ? `🔑 Password: ${zoomResult.password}\n` : '';
 
     try {
@@ -150,8 +153,9 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
             jam: meetingTime.format('HH:mm'),
             tgl: meetingTime.format('YYYY-MM-DD'),
             url: zoomResult.join_url || '',
-            id: zoomResult.id || '', // simpan ID meeting
-            account: accountIdx
+            id: zoomResult.id || '',
+            account: accountIdx,
+            schedule_for: schedule_for // simpan email schedule_for
         });
         fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
 

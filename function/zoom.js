@@ -92,19 +92,33 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
-    // Cek conflict di account 1 (mitrapema@gmail.com)
-    const conflict1 = checkMeetingConflict(logs, new Date(start_time_iso), 1);
-    if (!conflict1) {
-        // Tidak bentrok di account 1
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'), accountIdx: 1 };
+    // Cek conflict untuk akun 1 dengan schedule_for mitrapema@gmail.com
+    const conflictMitra = logs.some(m =>
+        m.tgl === start_time_iso.slice(0, 10) &&
+        m.schedule_for === 'mitrapema@gmail.com'
+    );
+    if (!conflictMitra) {
+        return {
+            meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'),
+            accountIdx: 1,
+            schedule_for: 'mitrapema@gmail.com'
+        };
     }
-    // Jika bentrok di akun 1, cek akun 2 (pembangunanaceh.pema@gmail.com)
-    const conflict2 = checkMeetingConflict(logs, new Date(start_time_iso), 2);
-    if (!conflict2) {
-        // Tidak bentrok di account 2
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2, 'pembangunanaceh.pema@gmail.com'), accountIdx: 2 };
+
+    // Jika conflict, cek akun 1 dengan schedule_for pembangunanaceh.pema@gmail.com
+    const conflictPembangunan = logs.some(m =>
+        m.tgl === start_time_iso.slice(0, 10) &&
+        m.schedule_for === 'pembangunanaceh.pema@gmail.com'
+    );
+    if (!conflictPembangunan) {
+        return {
+            meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'),
+            accountIdx: 1,
+            schedule_for: 'pembangunanaceh.pema@gmail.com'
+        };
     }
-    // Jika bentrok di kedua akun, return null
-    return { meeting: null, accountIdx: 0 };
+
+    // Jika kedua email conflict, return null
+    return { meeting: null, accountIdx: 0, schedule_for: null };
 };
 
