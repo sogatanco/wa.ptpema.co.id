@@ -6,9 +6,16 @@ dotenv.config();
 
 const getZoomToken = async (accountIdx = 1) => {
     // Ambil credential sesuai account index (1 atau 2)
-    const accountId = accountIdx === 2 ? process.env.ZOOM_ACCOUNT_ID2 : process.env.ZOOM_ACCOUNT_ID;
-    const clientId = accountIdx === 2 ? process.env.ZOOM_CLIENT_ID2 : process.env.ZOOM_CLIENT_ID;
-    const clientSecret = accountIdx === 2 ? process.env.ZOOM_CLIENT_SECRET2 : process.env.ZOOM_CLIENT_SECRET;
+    let accountId = accountIdx === 2 ? process.env.ZOOM_ACCOUNT_ID2 : process.env.ZOOM_ACCOUNT_ID;
+    let clientId = accountIdx === 2 ? process.env.ZOOM_CLIENT_ID2 : process.env.ZOOM_CLIENT_ID;
+    let clientSecret = accountIdx === 2 ? process.env.ZOOM_CLIENT_SECRET2 : process.env.ZOOM_CLIENT_SECRET;
+
+    // Jika env account 2 tidak ada, fallback ke account 1
+    if (accountIdx === 2 && (!accountId || !clientId || !clientSecret)) {
+        accountId = process.env.ZOOM_ACCOUNT_ID;
+        clientId = process.env.ZOOM_CLIENT_ID;
+        clientSecret = process.env.ZOOM_CLIENT_SECRET;
+    }
 
     // Tambahkan validasi/debug
     if (!accountId || !clientId || !clientSecret) {
@@ -100,4 +107,4 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     // Jika bentrok di kedua akun, return null
     return { meeting: null, accountIdx: 0 };
 };
-   
+
