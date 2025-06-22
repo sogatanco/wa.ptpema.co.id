@@ -88,19 +88,16 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     // Cek conflict di account 1 (mitrapema@gmail.com)
     const conflict1 = checkMeetingConflict(logs, new Date(start_time_iso), 1);
     if (!conflict1) {
-        // Tidak bentrok di account 1, gunakan schedule_for email akun 1
+        // Tidak bentrok di account 1
         return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'), accountIdx: 1 };
     }
-    // Jika bentrok di akun 1, coba schedule_for ke email kedua (masih pakai client 1)
+    // Jika bentrok di akun 1, cek akun 2 (pembangunanaceh.pema@gmail.com)
     const conflict2 = checkMeetingConflict(logs, new Date(start_time_iso), 2);
     if (!conflict2) {
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'), accountIdx: 1 };
+        // Tidak bentrok di account 2
+        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 2, 'pembangunanaceh.pema@gmail.com'), accountIdx: 2 };
     }
-    // Jika bentrok di kedua akun, coba pakai akun 1 tanpa schedule_for (PMI user utama)
-    const conflictPersonal = checkMeetingConflict(logs, new Date(start_time_iso), 0); // 0 = tidak filter account
-    if (!conflictPersonal) {
-        return { meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, null), accountIdx: 1 };
-    }
-    // Jika tetap bentrok, kembalikan error (meeting: null)
+    // Jika bentrok di kedua akun, return null
     return { meeting: null, accountIdx: 0 };
 };
+   

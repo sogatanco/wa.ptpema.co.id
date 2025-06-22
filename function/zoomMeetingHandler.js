@@ -105,7 +105,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
         let replyMsg = '❗Maaf, waktu meeting yang Anda pilih sudah dipakai di kedua akun Zoom. Silakan pilih waktu lain atau konfirmasi ke PIC terkait untuk melakukan perubahan.\n';
         if (futureMeetings.length > 0) {
             replyMsg += '\n\n📅 *Daftar Meeting Mendatang:*\n' + futureMeetings.map((m, idx) =>
-                `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`
+                `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   ID: ${m.id || '-'}\n   PIC: ${m.nama || '-'}\n`
             ).join('');
         }
         await msg.reply(replyMsg.trim());
@@ -150,6 +150,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
             jam: meetingTime.format('HH:mm'),
             tgl: meetingTime.format('YYYY-MM-DD'),
             url: zoomResult.join_url || '',
+            id: zoomResult.id || '', // simpan ID meeting
             account: accountIdx
         });
         fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
@@ -157,7 +158,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
         const futureMeetings = getFutureMeetings(logs);
         if (futureMeetings.length > 0) {
             replyMsg += '\n\n📅 *Daftar Meeting Mendatang:*\n' + futureMeetings.map((m, idx) =>
-                `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   PIC: ${m.nama || '-'}\n`
+                `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   ID: ${m.id || '-'}\n   PIC: ${m.nama || '-'}\n`
             ).join('');
         }
     } catch (e) {
