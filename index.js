@@ -148,7 +148,7 @@ client.on('message', (msg) => handleIncomingMessage(msg, {
 // Serve static files (jadwal-rapat.html) dan alias /jadwal-rapat
 app.use(express.static(path.join(process.cwd(), 'public')));
 app.get('/jadwal-rapat', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'jadwal-rapat.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'jadwal.html'));
 });
 
 // Endpoint publik jadwal rapat (JSON)

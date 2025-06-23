@@ -62,79 +62,89 @@
 <body>
   <div class="header">
     <h1>JADWAL RAPAT HARI INI</h1>
-    <p id="tanggal-hari-ini"></p>
+    <p>Senin, 23 Juni 2025</p>
   </div>
-  <div class="schedule" id="jadwal-ruang">
-    <!-- Jadwal akan diisi oleh JS -->
+  <div class="schedule">
+    <div class="room">
+      <h2>Ruang Growth</h2>
+      <!-- Jadwal diisi oleh JS -->
+      <div id="jadwal-growth"></div>
+      <div class="more">...</div>
+    </div>
+    <div class="room">
+      <h2>Ruang Harmony</h2>
+      <div id="jadwal-harmony"></div>
+      <div class="more">...</div>
+    </div>
+    <div class="room">
+      <h2>Ruang Kopiah</h2>
+      <div id="jadwal-kopiah"></div>
+      <div class="more">...</div>
+    </div>
+    <div class="room">
+      <h2>Ruang Internasional</h2>
+      <div id="jadwal-internasional"></div>
+      <div class="more">...</div>
+    </div>
   </div>
   <script>
-    // Tampilkan tanggal hari ini
-    const bulanIndo = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-    const hariIndo = [
-      "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
-    ];
-    const now = new Date();
-    document.getElementById('tanggal-hari-ini').textContent =
-      hariIndo[now.getDay()] + ', ' + now.getDate() + ' ' + bulanIndo[now.getMonth()] + ' ' + now.getFullYear();
+    // Helper untuk pad 0
+    function pad(num) { return num.toString().padStart(2, '0'); }
+    // Helper waktu sekarang (HH:mm)
+    function nowTime() {
+      const d = new Date();
+      return pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
 
-    // Ambil data jadwal dari endpoint (gunakan /api/jadwal-rapat, backend ambil dari rapat.json)
-    async function loadJadwal() {
-      const res = await fetch('/api/jadwal-rapat');
-      const ruangList = [
-        'Ruang Growth', 'Ruang Harmony', 'Ruang Kopiah', 'Ruang Internasional'
-      ];
+    // Ambil data dari API, bukan data dummy
+    const ruangList = [
+      "Ruang Growth", "Ruang Harmony", "Ruang Kopiah", "Ruang Internasional"
+    ];
+
+    async function renderJadwal() {
+      const now = nowTime();
       let data = [];
-      if (res.ok) data = await res.json();
+      try {
+        const res = await fetch('http://62.72.56.65:3000/api/jadwal-rapat');
+        if (res.ok) data = await res.json();
+      } catch {}
       // Filter hanya hari ini
-      const todayStr = now.toISOString().slice(0, 10);
-      data = data.filter(r => r.tanggal === todayStr);
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      data = Array.isArray(data) ? data.filter(r => r.tanggal === todayStr) : [];
 
       // Kelompokkan per ruang
       const ruangMap = {};
       ruangList.forEach(r => ruangMap[r] = []);
       data.forEach(r => {
+        // Pastikan nama ruang cocok persis (case sensitive)
         if (ruangMap[r.ruang]) ruangMap[r.ruang].push(r);
       });
 
-      // Render
-      const scheduleDiv = document.getElementById('jadwal-ruang');
-      scheduleDiv.innerHTML = '';
       ruangList.forEach(ruang => {
         const events = ruangMap[ruang] || [];
-        let html = `<div class="room"><h2>${ruang}</h2>`;
-        if (!events.length) {
-          html += `<div class="event"></div><div class="event"></div><div class="event"></div><div class="more">...</div>`;
-        } else {
-          // Sort by jam mulai
-          events.sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
-          events.forEach(ev => {
-            // Cek apakah rapat sedang berlangsung
-            let isOngoing = false;
-            if (ev.jam && ev.jam_selesai) {
-              const jamMulai = ev.jam;
-              const jamSelesai = ev.jam_selesai;
-              const nowTime = now.toTimeString().slice(0,5);
-              isOngoing = (jamMulai <= nowTime && nowTime < jamSelesai);
-            }
-            html += `<div class="event${isOngoing ? ' ongoing' : ''}" style="background-color:${isOngoing ? '#2ecc71' : '#1e90ff'};">
-              <div class="time">${ev.jam || '-'}${ev.jam_selesai ? ' – ' + ev.jam_selesai : ''}</div>
-              <div>${ev.agenda || '-'}</div>
-              <div style="font-size:13px;color:#fff;opacity:0.8;">PIC: ${ev.pic_name || '-'}</div>
-            </div>`;
-          });
-          // Tambah slot kosong jika kurang dari 3 event
-          for (let i = events.length; i < 3; i++) html += `<div class="event"></div>`;
-          html += `<div class="more">...</div>`;
-        }
-        html += `</div>`;
-        scheduleDiv.innerHTML += html;
+        let html = '';
+        // Urutkan berdasarkan jam mulai
+        events.sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
+        events.forEach(ev => {
+          let bg = "#1e90ff";
+          // Cek apakah rapat sedang berlangsung
+          if (ev.jam && ev.jam_selesai && now >= ev.jam && now < ev.jam_selesai) {
+            bg = "#2ecc71";
+          }
+          html += `<div class="event" style="background-color:${bg};">
+            <div class="time">${ev.jam || '-'} – ${ev.jam_selesai || '-'}</div>
+            <div>${ev.agenda || '-'}</div>
+            <div style="font-size:13px;color:#fff;opacity:0.8;">PIC: ${ev.pic_name || '-'}</div>
+          </div>`;
+        });
+        // Tambah slot kosong jika kurang dari 3 event
+        for (let i = events.length; i < 3; i++) html += `<div class="event"></div>`;
+        document.getElementById('jadwal-' + ruang.toLowerCase().replace(' ', '-')).innerHTML = html;
       });
     }
-    loadJadwal();
-    setInterval(loadJadwal, 1000);
+    renderJadwal();
+    setInterval(renderJadwal, 1000);
   </script>
 </body>
 </html>
