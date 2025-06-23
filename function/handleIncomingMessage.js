@@ -385,15 +385,19 @@ Ketik angka sesuai pilihan.`;
             // Hapus dari Zoom API jika ada ID meeting
             if (meeting.id) {
                 try {
-                    // accountIdx dan schedule_for sudah dicatat di log
                     let accountIdx = meeting.account || 1;
                     await deleteZoomMeeting(meeting.id, accountIdx);
                 } catch (err) {
-                    console.error('❌ Gagal hapus meeting di Zoom API:', err.message);
-                    // Tetap lanjut hapus dari log lokal
+                    // Jika error 404 (meeting sudah tidak ada di Zoom), abaikan
+                    if (err.response && err.response.status === 404) {
+                        console.warn('⚠️ Meeting Zoom sudah tidak ada di Zoom API, lanjut hapus log lokal.');
+                    } else {
+                        console.error('❌ Gagal hapus meeting di Zoom API:', err.message);
+                        // Tetap lanjut hapus dari log lokal
+                    }
                 }
             }
-            // Hapus dari log
+            // Hapus dari log berdasarkan ID Zoom (bukan index)
             let logFile = './meeting_log.json';
             let logs = [];
             if (fs.existsSync(logFile)) {
@@ -403,7 +407,7 @@ Ketik angka sesuai pilihan.`;
                     if (!Array.isArray(logs)) logs = [];
                 } catch { logs = []; }
             }
-            logs = logs.filter((m, idx) => (idx + 1) !== id || m.nomor_user !== from);
+            logs = logs.filter(m => !(m.id == meeting.id && m.nomor_user === from));
             fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Zoom meeting berhasil dibatalkan.');
