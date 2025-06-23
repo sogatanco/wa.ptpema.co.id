@@ -1161,7 +1161,7 @@ Ketik angka sesuai pilihan.`;
 
                 let konsumsiMsg = '';
                 if (booking.butuh_konsumsi) {
-                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}\n\n  Silakan jumpai ${PIC_KONSUMSI}/${KONSUMSI_NUMBER} untuk mengisi form permintaan konsumsi.`;
+                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}\n\n  Silakan jumpai ${PIC_KONSUMSI} / ${nomorTo08(KONSUMSI_NUMBER)} untuk mengisi form permintaan konsumsi.`;
                 } else {
                     konsumsiMsg = 'Konsumsi: Tidak';
                 }
