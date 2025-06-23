@@ -11,6 +11,7 @@ import { apiKeyAuth } from './function/apiKeyAuth.js';
 import { generateContextFromMysql } from './function/generateContextFromMysql.js';
 import { pollAndSendMessages } from './function/pollAndSendMessages.js';
 import { handleIncomingMessage } from './function/handleIncomingMessage.js';
+import path from 'path';
 
 dotenv.config();
 
@@ -143,6 +144,25 @@ client.on('message', (msg) => handleIncomingMessage(msg, {
     GEMINI_API_KEY,
     greetedNumbers
 }));
+
+// Serve static files (jadwal-rapat.html)
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Endpoint publik jadwal rapat (JSON)
+app.get('/api/jadwal-rapat', async (req, res) => {
+    try {
+        const file = path.join(process.cwd(), 'rapat.json');
+        if (!fs.existsSync(file)) return res.json([]);
+        const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+        // Hanya tampilkan rapat hari ini ke depan, urutkan
+        const today = new Date().toISOString().slice(0, 10);
+        const filtered = (Array.isArray(data) ? data : []).filter(r => r.tanggal >= today)
+            .sort((a, b) => a.tanggal === b.tanggal ? (a.jam || '').localeCompare(b.jam || '') : a.tanggal.localeCompare(b.tanggal));
+        res.json(filtered);
+    } catch (e) {
+        res.status(500).json({ error: 'Gagal membaca data rapat.' });
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {

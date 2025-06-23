@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Jadwal Rapat PT PEMA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8fafc; }
+        .table thead { background: #0d6efd; color: #fff; }
+        .table tbody tr { transition: background 0.2s; }
+        .table tbody tr:hover { background: #e7f1ff; }
+        .badge-zoom { background: #198754; }
+        .badge-konsumsi { background: #ffc107; color: #333; }
+        .agenda { font-size: 1.1em; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h2 class="mb-4 text-center">Jadwal Rapat PT PEMA</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle" id="jadwalTable">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Jam</th>
+                        <th>Ruang</th>
+                        <th>Agenda</th>
+                        <th>PIC</th>
+                        <th>Konsumsi</th>
+                        <th>Zoom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data akan diisi oleh JS -->
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-4 text-muted" id="lastUpdate"></div>
+    </div>
+    <script>
+        async function loadJadwal() {
+            const res = await fetch('/api/jadwal-rapat');
+            if (!res.ok) {
+                document.querySelector('#jadwalTable tbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>';
+                return;
+            }
+            const data = await res.json();
+            const tbody = document.querySelector('#jadwalTable tbody');
+            tbody.innerHTML = '';
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Belum ada jadwal rapat.</td></tr>';
+                return;
+            }
+            data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.tanggal}</td>
+                        <td>${item.jam} - ${item.jam_selesai || '-'}</td>
+                        <td>${item.ruang}</td>
+                        <td>
+                            <span class="agenda">${item.agenda}</span>
+                        </td>
+                        <td>
+                            ${item.pic_name || '-'}<br>
+                            <small class="text-muted">${item.pic_nomor || ''}</small>
+                        </td>
+                        <td>
+                            ${item.butuh_konsumsi ? `<span class="badge badge-konsumsi">Ya</span><br><small>${item.konsumsi_detail || ''}</small>` : '<span class="badge bg-secondary">Tidak</span>'}
+                        </td>
+                        <td>
+                            ${item.butuh_zoom && item.zoom_link ? `<a href="${item.zoom_link}" target="_blank" class="badge badge-zoom">Zoom</a><br><small>ID: ${item.zoom_id || '-'}<br>PW: ${item.zoom_password || '-'}</small>` : '<span class="badge bg-secondary">-</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('lastUpdate').textContent = 'Terakhir update: ' + new Date().toLocaleString('id-ID');
+        }
+        loadJadwal();
+        setInterval(loadJadwal, 60 * 1000);
+    </script>
+</body>
+</html>
