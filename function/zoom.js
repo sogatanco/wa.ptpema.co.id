@@ -65,7 +65,7 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
         duration,
         timezone: 'Asia/Jakarta',
         settings: {
-            use_pmi: true,
+            use_pmi: false,
             join_before_host: true,
             waiting_room: false,
         }
@@ -126,7 +126,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 export const deleteZoomMeeting = async (meetingId, accountIdx = 1) => {
     const token = await getZoomToken(accountIdx);
     await axios.delete(
-        `https://api.zoom.us/v2/scheduler/schedules/${meetingId}`,
+        `https://api.zoom.us/v2/meetings/${meetingId}`,
         {
             headers: {
                 Authorization: `Bearer ${token}`,
