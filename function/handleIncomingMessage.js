@@ -109,8 +109,8 @@ Ketik angka sesuai pilihan.`;
             `1. Zoom meeting yang akan datang\n` +
             `2. Buat link Zoom\n` +
             `3. Cancel Zoom meeting\n` +
-            `4. Kembali ke menu utama\n` +
-            `5. Keluar menu\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
             `Ketik angka sesuai pilihan.`;
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(submenuMsg);
@@ -118,7 +118,7 @@ Ketik angka sesuai pilihan.`;
     }
 
     // Handler submenu Zoom Meeting - kembali ke menu utama
-    if (userMenuState.get(from) === 'zoom' && text === '4') {
+    if (userMenuState.get(from) === 'zoom' && text === '9') {
         userMenuState.set(from, 'main');
         const menuMsg =
             `*MENU UTAMA*\n1. Booking Ruang Rapat\n2. Zoom Meeting\n3. Keluar`;
@@ -128,7 +128,7 @@ Ketik angka sesuai pilihan.`;
     }
 
     // Handler submenu Zoom Meeting - keluar menu
-    if (userMenuState.get(from) === 'zoom' && text === '5') {
+    if (userMenuState.get(from) === 'zoom' && text === '0') {
         userMenuState.delete(from);
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply('Anda telah keluar dari menu Zoom Meeting.');
@@ -150,9 +150,19 @@ Ketik angka sesuai pilihan.`;
         const today = dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD');
         const futureMeetings = logs.filter(m => m.tgl >= today)
             .sort((a, b) => a.tgl === b.tgl ? a.jam.localeCompare(b.jam) : a.tgl.localeCompare(b.tgl));
+        let submenuMsg =
+            `*ZOOM MEETING*\n` +
+            `1. Zoom meeting yang akan datang\n` +
+            `2. Buat link Zoom\n` +
+            `3. Cancel Zoom meeting\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
+            `Ketik angka sesuai pilihan.`;
         if (futureMeetings.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Belum ada Zoom meeting yang akan datang.');
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
         } else {
             let listMsg = '*Daftar Zoom Meeting Yang Akan Datang:*\n';
             futureMeetings.forEach((m, idx) => {
@@ -160,6 +170,8 @@ Ketik angka sesuai pilihan.`;
             });
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(listMsg);
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
         }
         return;
     }
@@ -325,8 +337,8 @@ Ketik angka sesuai pilihan.`;
                 `1. Zoom meeting yang akan datang\n` +
                 `2. Buat link Zoom\n` +
                 `3. Cancel Zoom meeting\n` +
-                `4. Kembali to menu utama\n` +
-                `5. Keluar menu\n` +
+                `9. Kembali ke menu utama\n` +
+                `0. Keluar menu\n` +
                 `Ketik angka sesuai pilihan.`;
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(submenuMsg);
@@ -349,9 +361,19 @@ Ketik angka sesuai pilihan.`;
         const userMeetings = logs
             .map((m, idx) => ({ ...m, idx: idx + 1 }))
             .filter(m => m.nomor_user === from);
+        let submenuMsg =
+            `*ZOOM MEETING*\n` +
+            `1. Zoom meeting yang akan datang\n` +
+            `2. Buat link Zoom\n` +
+            `3. Cancel Zoom meeting\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
+            `Ketik angka sesuai pilihan.`;
         if (userMeetings.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Anda belum pernah membuat Zoom meeting.');
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
             return;
         }
         let listMsg = '*ID Zoom Meeting Anda:*\n';
@@ -363,6 +385,8 @@ Ketik angka sesuai pilihan.`;
         userBookingData.set(from, { step: 'select-cancel-zoom', userMeetings });
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(listMsg);
+        await new Promise(res => setTimeout(res, 2000));
+        await msg.reply(submenuMsg);
         return;
     }
 
@@ -411,6 +435,17 @@ Ketik angka sesuai pilihan.`;
             fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Zoom meeting berhasil dibatalkan.');
+            // Tampilkan submenu setelah hapus
+            let submenuMsg =
+                `*ZOOM MEETING*\n` +
+                `1. Zoom meeting yang akan datang\n` +
+                `2. Buat link Zoom\n` +
+                `3. Cancel Zoom meeting\n` +
+                `9. Kembali ke menu utama\n` +
+                `0. Keluar menu\n` +
+                `Ketik angka sesuai pilihan.`;
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
             userMenuState.set(from, 'zoom');
             userBookingData.delete(from);
             return;
@@ -422,6 +457,17 @@ Ketik angka sesuai pilihan.`;
         // Panggil handler Zoom Meeting seperti handleZoomMeeting
         await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
         userMenuState.set(from, 'zoom');
+        // Tampilkan submenu setelah buat link zoom
+        let submenuMsg =
+            `*ZOOM MEETING*\n` +
+            `1. Zoom meeting yang akan datang\n` +
+            `2. Buat link Zoom\n` +
+            `3. Cancel Zoom meeting\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
+            `Ketik angka sesuai pilihan.`;
+        await new Promise(res => setTimeout(res, 2000));
+        await msg.reply(submenuMsg);
         return;
     }
 
@@ -439,9 +485,20 @@ Ketik angka sesuai pilihan.`;
             .map((r, idx) => ({ ...r, id: idx + 1 }))
             .filter(r => r.user === from);
 
+        let submenuMsg =
+            `*BOOKING RUANG RAPAT*\n` +
+            `1. List rapat yang akan datang\n` +
+            `2. Booking ruang rapat\n` +
+            `3. Cancel booking rapat\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
+            `Ketik angka sesuai pilihan.`;
+
         if (userRapat.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Anda belum pernah membuat booking rapat.');
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
             return;
         }
         let listMsg = '*ID Booking Rapat Anda:*\n';
@@ -453,6 +510,8 @@ Ketik angka sesuai pilihan.`;
         userBookingData.set(from, { step: 'select-cancel', userRapat });
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(listMsg);
+        await new Promise(res => setTimeout(res, 2000));
+        await msg.reply(submenuMsg);
         return;
     }
 
@@ -476,6 +535,16 @@ Ketik angka sesuai pilihan.`;
             userBookingData.set(from, { ...booking, step: 'confirm-cancel', cancelId: id });
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(`Apakah Anda yakin ingin membatalkan booking rapat dengan ID ${id}? (Y/N)`);
+            let submenuMsg =
+                `*BOOKING RUANG RAPAT*\n` +
+                `1. List rapat yang akan datang\n` +
+                `2. Booking ruang rapat\n` +
+                `3. Cancel booking rapat\n` +
+                `9. Kembali ke menu utama\n` +
+                `0. Keluar menu\n` +
+                `Ketik angka sesuai pilihan.`;
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
             return;
         }
     }
@@ -535,18 +604,49 @@ Ketik angka sesuai pilihan.`;
                 fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Booking rapat berhasil dibatalkan.');
+                // Tampilkan submenu setelah hapus booking
+                let submenuMsg =
+                    `*BOOKING RUANG RAPAT*\n` +
+                    `1. List rapat yang akan datang\n` +
+                    `2. Booking ruang rapat\n` +
+                    `3. Cancel booking rapat\n` +
+                    `9. Kembali ke menu utama\n` +
+                    `0. Keluar menu\n` +
+                    `Ketik angka sesuai pilihan.`;
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply(submenuMsg);
                 userMenuState.set(from, 'booking');
                 userBookingData.delete(from);
                 return;
             } else if (text.toLowerCase() === 'n' || text.toLowerCase() === 'tidak') {
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Pembatalan booking dibatalkan.');
+                let submenuMsg =
+                    `*BOOKING RUANG RAPAT*\n` +
+                    `1. List rapat yang akan datang\n` +
+                    `2. Booking ruang rapat\n` +
+                    `3. Cancel booking rapat\n` +
+                    `9. Kembali ke menu utama\n` +
+                    `0. Keluar menu\n` +
+                    `Ketik angka sesuai pilihan.`;
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply(submenuMsg);
                 userMenuState.set(from, 'booking');
                 userBookingData.delete(from);
                 return;
             } else {
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah Anda yakin ingin membatalkan booking rapat ini? (Y/N)');
+                let submenuMsg =
+                    `*BOOKING RUANG RAPAT*\n` +
+                    `1. List rapat yang akan datang\n` +
+                    `2. Booking ruang rapat\n` +
+                    `3. Cancel booking rapat\n` +
+                    `9. Kembali ke menu utama\n` +
+                    `0. Keluar menu\n` +
+                    `Ketik angka sesuai pilihan.`;
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply(submenuMsg);
                 return;
             }
         }
@@ -588,9 +688,20 @@ Ketik angka sesuai pilihan.`;
         const today = dayjs().format('YYYY-MM-DD');
         rapatList = rapatList.filter(r => r.tanggal >= today);
 
+        let submenuMsg =
+            `*BOOKING RUANG RAPAT*\n` +
+            `1. List rapat yang akan datang\n` +
+            `2. Booking ruang rapat\n` +
+            `3. Cancel booking rapat\n` +
+            `9. Kembali ke menu utama\n` +
+            `0. Keluar menu\n` +
+            `Ketik angka sesuai pilihan.`;
+
         if (rapatList.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Belum ada rapat yang terdaftar.');
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
         } else {
             // Kelompokkan berdasarkan ruang
             const ruangMap = {};
@@ -618,6 +729,8 @@ Ketik angka sesuai pilihan.`;
             });
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(listMsg);
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
         }
         return;
     }
@@ -716,18 +829,33 @@ Ketik angka sesuai pilihan.`;
             booking.step = 5;
             userBookingData.set(from, booking);
             await new Promise(res => setTimeout(res, 2000));
-            await msg.reply('Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
+            await msg.reply(
+                'Pilih ruang rapat:\n' +
+                'a. Ruang Growth\n' +
+                'b. Ruang Harmony\n' +
+                'c. Ruang Kopiah\n' +
+                'd. Ruang Internasional\n' +
+                'Ketik huruf sesuai pilihan.'
+            );
             return;
         }
         // Step ruang
         if (booking && booking.step === 5) {
             let ruang = '';
-            if (text === 'a') ruang = 'Growth';
-            else if (text === 'b') ruang = 'Harmony';
-            else if (text === 'c') ruang = 'Ruang PAC';
+            if (text === 'a') ruang = 'Ruang Growth';
+            else if (text === 'b') ruang = 'Ruang Harmony';
+            else if (text === 'c') ruang = 'Ruang Kopiah';
+            else if (text === 'd') ruang = 'Ruang Internasional';
             else {
                 await new Promise(res => setTimeout(res, 2000));
-                await msg.reply('Pilihan ruang tidak valid. Pilih ruang rapat:\na. Growth\nb. Harmony\nc. Ruang PAC\nKetik huruf sesuai pilihan.');
+                await msg.reply(
+                    'Pilihan ruang tidak valid. Pilih ruang rapat:\n' +
+                    'a. Ruang Growth\n' +
+                    'b. Ruang Harmony\n' +
+                    'c. Ruang Kopiah\n' +
+                    'd. Ruang Internasional\n' +
+                    'Ketik huruf sesuai pilihan.'
+                );
                 return;
             }
             booking.ruang = ruang;
