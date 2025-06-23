@@ -357,10 +357,14 @@ Ketik angka sesuai pilihan.`;
                 if (!Array.isArray(logs)) logs = [];
             } catch { logs = []; }
         }
-        // Filter meeting milik user
+        // Filter meeting milik user dan dari jam sekarang ke depan
+        const now = dayjs().tz('Asia/Jakarta');
         const userMeetings = logs
             .map((m, idx) => ({ ...m, idx: idx + 1 }))
-            .filter(m => m.nomor_user === from);
+            .filter(m => m.nomor_user === from && (
+                m.tgl > now.format('YYYY-MM-DD') ||
+                (m.tgl === now.format('YYYY-MM-DD') && (!m.jam || m.jam >= now.format('HH:mm')))
+            ));
         let submenuMsg =
             `*ZOOM MEETING*\n` +
             `1. Zoom meeting yang akan datang\n` +
@@ -371,12 +375,12 @@ Ketik angka sesuai pilihan.`;
             `Ketik angka sesuai pilihan.`;
         if (userMeetings.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
-            await msg.reply('Anda belum pernah membuat Zoom meeting.');
+            await msg.reply('Anda belum pernah membuat Zoom meeting yang akan datang.');
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(submenuMsg);
             return;
         }
-        let listMsg = '*ID Zoom Meeting Anda:*\n';
+        let listMsg = '*ID Zoom Meeting Anda (yang akan datang):*\n';
         userMeetings.forEach(m => {
             listMsg += `ID: ${m.idx}\nTanggal: ${m.tgl}\nJam: ${m.jam}\nTopik: ${m.topic}\nID Meeting: ${m.id || '-'}\n\n`;
         });
@@ -473,17 +477,24 @@ Ketik angka sesuai pilihan.`;
 
     // Handler submenu Cancel Booking Rapat
     if (userMenuState.get(from) === 'booking' && text === '3') {
-        // Ambil rapat yang dibuat oleh user ini
+        // Ambil rapat yang dibuat oleh user ini dan dari jam sekarang ke depan
         let rapatList = [];
         try {
             if (fs.existsSync('./rapat.json')) {
                 rapatList = JSON.parse(fs.readFileSync('./rapat.json', 'utf8'));
             }
         } catch { }
-        // Filter hanya rapat milik user
+        const now = dayjs().tz('Asia/Jakarta');
+        // Filter hanya rapat milik user dan dari jam sekarang ke depan
         const userRapat = rapatList
             .map((r, idx) => ({ ...r, id: idx + 1 }))
-            .filter(r => r.user === from);
+            .filter(r =>
+                r.user === from &&
+                (
+                    r.tanggal > now.format('YYYY-MM-DD') ||
+                    (r.tanggal === now.format('YYYY-MM-DD') && (!r.jam || r.jam >= now.format('HH:mm')))
+                )
+            );
 
         let submenuMsg =
             `*BOOKING RUANG RAPAT*\n` +
@@ -496,12 +507,12 @@ Ketik angka sesuai pilihan.`;
 
         if (userRapat.length === 0) {
             await new Promise(res => setTimeout(res, 2000));
-            await msg.reply('Anda belum pernah membuat booking rapat.');
+            await msg.reply('Anda belum pernah membuat booking rapat yang akan datang.');
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(submenuMsg);
             return;
         }
-        let listMsg = '*ID Booking Rapat Anda:*\n';
+        let listMsg = '*ID Booking Rapat Anda (yang akan datang):*\n';
         userRapat.forEach(r => {
             listMsg += `ID: ${r.id}\nTanggal: ${r.tanggal}\nJam: ${r.jam}\nAgenda: ${r.agenda}\nRuang: ${r.ruang}\n\n`;
         });
