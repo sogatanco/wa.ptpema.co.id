@@ -585,16 +585,6 @@ Ketik angka sesuai pilihan.`;
             userBookingData.set(from, { ...booking, step: 'confirm-cancel', cancelId: id });
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply(`Apakah Anda yakin ingin membatalkan booking rapat dengan ID ${id}? (Y/N)`);
-            let submenuMsg =
-                `*BOOKING RUANG RAPAT*\n` +
-                `1. List rapat yang akan datang\n` +
-                `2. Booking ruang rapat\n` +
-                `3. Cancel booking rapat\n` +
-                `9. Kembali ke menu utama\n` +
-                `0. Keluar menu\n` +
-                `Ketik angka sesuai pilihan.`;
-            await new Promise(res => setTimeout(res, 2000));
-            await msg.reply(submenuMsg);
             return;
         }
     }
@@ -719,16 +709,6 @@ Ketik angka sesuai pilihan.`;
             } else {
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Jawab dengan Y (ya) atau N (tidak). Apakah Anda yakin ingin membatalkan booking rapat ini? (Y/N)');
-                let submenuMsg =
-                    `*BOOKING RUANG RAPAT*\n` +
-                    `1. List rapat yang akan datang\n` +
-                    `2. Booking ruang rapat\n` +
-                    `3. Cancel booking rapat\n` +
-                    `9. Kembali ke menu utama\n` +
-                    `0. Keluar menu\n` +
-                    `Ketik angka sesuai pilihan.`;
-                await new Promise(res => setTimeout(res, 2000));
-                await msg.reply(submenuMsg);
                 return;
             }
         }
