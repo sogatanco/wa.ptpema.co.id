@@ -123,17 +123,55 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 };
 
 // Fungsi untuk menghapus meeting Zoom berdasarkan meeting ID dan accountIdx
+// export const deleteZoomMeeting = async (meetingId, accountIdx = 1) => {
+//     const token = await getZoomToken(accountIdx);
+//     await axios.delete(
+//         `https://api.zoom.us/v2/meetings/${meetingId}`,
+//         {
+//             headers: {
+//                 Authorization: `Bearer ${token}`,
+//                 'Content-Type': 'application/json'
+//             }
+//         }
+//     );
+//     return true;
+// };
+
 export const deleteZoomMeeting = async (meetingId, accountIdx = 1) => {
-    const token = await getZoomToken(accountIdx);
-    await axios.delete(
-        `https://api.zoom.us/v2/meetings/${meetingId}`,
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+    try {
+        // Validasi awal
+        if (!meetingId || isNaN(meetingId)) {
+            throw new Error("Meeting ID tidak valid atau kosong.");
         }
-    );
-    return true;
-};
+
+        // Ambil token sesuai akun Zoom
+        const token = await getZoomToken(accountIdx);
+
+        // Kirim request DELETE ke Zoom API
+        await axios.delete(
+            `https://api.zoom.us/v2/meetings/${meetingId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        console.log(`✅ Meeting ${meetingId} berhasil dihapus.`);
+        return true;
+
+    } catch (error) {
+        // Log detail error dari response Zoom API
+        const status = error?.response?.status;
+        const message = error?.response?.data || error.message;
+
+        console.error("❌ Gagal menghapus Zoom meeting:", {
+            status,
+            message
+        });
+
+        return false;
+    }
+}
 
