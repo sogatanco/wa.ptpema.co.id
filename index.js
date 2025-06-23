@@ -151,16 +151,22 @@ app.get('/jadwal-rapat', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'jadwal.html'));
 });
 
+// Allow CORS for /api/jadwal-rapat
+app.use('/api/jadwal-rapat', (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+});
+
 // Endpoint publik jadwal rapat (JSON)
 app.get('/api/jadwal-rapat', async (req, res) => {
     try {
         const file = path.join(process.cwd(), 'rapat.json');
         if (!fs.existsSync(file)) return res.json([]);
         const data = JSON.parse(fs.readFileSync(file, 'utf8'));
-        // Hanya tampilkan rapat hari ini ke depan, urutkan
+        // Tampilkan hanya rapat hari ini
         const today = new Date().toISOString().slice(0, 10);
-        const filtered = (Array.isArray(data) ? data : []).filter(r => r.tanggal >= today)
-            .sort((a, b) => a.tanggal === b.tanggal ? (a.jam || '').localeCompare(b.jam || '') : a.tanggal.localeCompare(b.tanggal));
+        const filtered = (Array.isArray(data) ? data : []).filter(r => r.tanggal === today)
+            .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
         res.json(filtered);
     } catch (e) {
         res.status(500).json({ error: 'Gagal membaca data rapat.' });
