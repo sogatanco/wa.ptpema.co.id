@@ -40,13 +40,18 @@
         <div class="text-center mt-4 text-muted" id="lastUpdate"></div>
     </div>
     <script>
-        async function loadJadwal() {
+        let lastHash = '';
+        async function loadJadwal(force = false) {
             const res = await fetch('/api/jadwal-rapat');
             if (!res.ok) {
                 document.querySelector('#jadwalTable tbody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Gagal memuat data.</td></tr>';
                 return;
             }
             const data = await res.json();
+            // Buat hash sederhana dari data untuk deteksi perubahan
+            const hash = JSON.stringify(data);
+            if (!force && hash === lastHash) return;
+            lastHash = hash;
             const tbody = document.querySelector('#jadwalTable tbody');
             tbody.innerHTML = '';
             if (!data.length) {
@@ -77,8 +82,10 @@
             });
             document.getElementById('lastUpdate').textContent = 'Terakhir update: ' + new Date().toLocaleString('id-ID');
         }
-        loadJadwal();
-        setInterval(loadJadwal, 60 * 1000);
+        // Panggil setiap detik
+        setInterval(() => loadJadwal(), 1000);
+        // Panggil sekali saat awal
+        loadJadwal(true);
     </script>
 </body>
 </html>
