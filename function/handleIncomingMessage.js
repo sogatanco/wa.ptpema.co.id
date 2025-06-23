@@ -30,6 +30,8 @@ const userBookingData = new Map();
 
 // Nomor IT untuk notifikasi
 const IT_NUMBER = '6282285658594@c.us';
+// Nomor konsumsi untuk notifikasi
+const KONSUMSI_NUMBER = '6285260967173@c.us';
 
 // Helper untuk konversi nomor 62 ke 08
 function nomorTo08(nomor) {
@@ -666,6 +668,22 @@ Ketik angka sesuai pilihan.`;
                         console.error('❌ Gagal kirim notif cancel ke IT:', e.message);
                     }
                 }
+                // Notifikasi ke konsumsi jika butuh konsumsi
+                if (rapat.butuh_konsumsi && rapat.konsumsi_detail) {
+                    try {
+                        const notifKonsumsi =
+                            `Permintaan konsumsi telah dibatalkan oleh ${nomorTo08(from)} (${rapat.pic_name}):\n` +
+                            `Tanggal: ${rapat.tanggal}\n` +
+                            `Jam: ${rapat.jam} - ${rapat.jam_selesai}\n` +
+                            `Ruang: ${rapat.ruang}\n` +
+                            `Agenda: ${rapat.agenda}\n` +
+                            `Konsumsi: ${rapat.konsumsi_detail}\n` +
+                            `Mohon konfirmasi ke nomor ${nomorTo08(from)}`;
+                        await client.sendMessage(KONSUMSI_NUMBER, notifKonsumsi);
+                    } catch (e) {
+                        console.error('❌ Gagal kirim notif cancel konsumsi:', e.message);
+                    }
+                }
                 // Tampilkan submenu setelah hapus booking
                 let submenuMsg =
                     `*BOOKING RUANG RAPAT*\n` +
@@ -1176,6 +1194,22 @@ Ketik angka sesuai pilihan.`;
                         await client.sendMessage(IT_NUMBER, notifMsg);
                     } catch (e) {
                         console.error('❌ Gagal kirim notif ke IT:', e.message);
+                    }
+                }
+                // Notifikasi ke konsumsi jika butuh konsumsi
+                if (booking.butuh_konsumsi && booking.konsumsi_detail) {
+                    try {
+                        const notifKonsumsi =
+                            `Permintaan konsumsi baru dari ${nomorTo08(from)} (${pic_name}):\n` +
+                            `Tanggal: ${booking.tanggal}\n` +
+                            `Jam: ${booking.jam} - ${booking.jam_selesai}\n` +
+                            `Ruang: ${booking.ruang}\n` +
+                            `Agenda: ${booking.agenda}\n` +
+                            `Konsumsi: ${booking.konsumsi_detail}\n` +
+                            `Mohon konfirmasi ke nomor ${nomorTo08(from)}`;
+                        await client.sendMessage(KONSUMSI_NUMBER, notifKonsumsi);
+                    } catch (e) {
+                        console.error('❌ Gagal kirim notif konsumsi:', e.message);
                     }
                 }
                 // Tampilkan menu booking lagi
