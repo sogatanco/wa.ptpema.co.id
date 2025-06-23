@@ -51,8 +51,8 @@ client.on('auth_failure', (msg) => {
     console.error('❌ Autentikasi gagal:', msg);
 });
 
-client.on('disconnected', (reason) => {
-    console.log('⚠️ WhatsApp client terputus.', reason);
+client.on('disconnected', () => {
+    console.log('⚠️ WhatsApp client terputus.');
     isReady = false;
 });
 
@@ -61,15 +61,6 @@ client.on('loading_screen', (percent, message) => {
 });
 
 client.on('error', (err) => {
-    // Tangani error Puppeteer, abaikan jika "Execution context was destroyed"
-    if (
-        err &&
-        err.message &&
-        err.message.includes('Execution context was destroyed')
-    ) {
-        console.warn('⚠️ Puppeteer: Execution context was destroyed. Abaikan error ini.');
-        return;
-    }
     console.error('❌ WhatsApp client error:', err);
 });
 
@@ -147,14 +138,11 @@ if (MYSQL_CONTEXT_ENABLED) {
 }
 
 // Pasang handler pada event message
-client.on('message', (msg) => {
-    console.log('📩 Pesan masuk:', msg.body);
-    handleIncomingMessage(msg, {
-        client,
-        GEMINI_API_KEY,
-        greetedNumbers
-    });
-});
+client.on('message', (msg) => handleIncomingMessage(msg, {
+    client,
+    GEMINI_API_KEY,
+    greetedNumbers
+}));
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
@@ -168,32 +156,6 @@ server.on('error', (err) => {
     } else {
         console.error('❌ Server error:', err);
     }
-});
-
-// Tangani unhandled promise rejection agar server tidak crash karena error Puppeteer
-process.on('unhandledRejection', (reason, promise) => {
-    if (
-        reason &&
-        reason.message &&
-        reason.message.includes('Execution context was destroyed')
-    ) {
-        console.warn('⚠️ UnhandledRejection: Execution context was destroyed. Abaikan error ini.');
-        return;
-    }
-    console.error('❌ Unhandled Rejection:', reason);
-});
-
-// Tangani uncaught exception agar server tetap berjalan
-process.on('uncaughtException', (err) => {
-    if (
-        err &&
-        err.message &&
-        err.message.includes('Execution context was destroyed')
-    ) {
-        console.warn('⚠️ UncaughtException: Execution context was destroyed. Abaikan error ini.');
-        return;
-    }
-    console.error('❌ Uncaught Exception:', err);
 });
 
 
