@@ -118,11 +118,19 @@
       ruangList.forEach(r => ruangMap[r] = []);
       data.forEach(r => {
         // Pastikan nama ruang cocok persis (case sensitive)
-        if (ruangMap[r.ruang]) ruangMap[r.ruang].push({
-          jam: r.jam,
-          jam_selesai: r.jam_selesai,
-          agenda: r.agenda,
-          pic_name: r.pic_name
+        // Gunakan trim dan lowercase agar lebih toleran
+        ruangList.forEach(ruangNama => {
+          if (
+            r.ruang &&
+            r.ruang.trim().toLowerCase() === ruangNama.trim().toLowerCase()
+          ) {
+            ruangMap[ruangNama].push({
+              jam: r.jam,
+              jam_selesai: r.jam_selesai,
+              agenda: r.agenda,
+              pic_name: r.pic_name
+            });
+          }
         });
       });
 
