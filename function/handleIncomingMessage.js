@@ -28,6 +28,18 @@ setInterval(loadNomorTerdaftar, 5 * 60 * 1000);
 const userMenuState = new Map();
 const userBookingData = new Map();
 
+// Nomor IT untuk notifikasi
+const IT_NUMBER = '6282285658594@c.us';
+
+// Helper untuk konversi nomor 62 ke 08
+function nomorTo08(nomor) {
+    let n = nomor.replace(/@.*$/, '');
+    if (n.startsWith('62')) return '0' + n.slice(2);
+    if (n.startsWith('08')) return n;
+    if (n.startsWith('8')) return '0' + n;
+    return n;
+}
+
 async function handleFallbackResponse({ msg, fullPrompt, GEMINI_API_KEY, greetedNumbers, from, text }) {
     const fallbackResponse = await askGeminiFlashWithoutContext(fullPrompt, GEMINI_API_KEY);
     let isUnclearFallback =
@@ -330,6 +342,20 @@ Ketik angka sesuai pilihan.`;
                 `🆔 ID Meeting: ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
                 `🔑 Password: ${zoomResult.password || '-'}`
             );
+            // Notifikasi ke IT
+            try {
+                const notifMsg =
+                    `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
+                    `Topik: ${booking.topic}\n` +
+                    `Tanggal: ${booking.tanggal}\n` +
+                    `Jam: ${booking.jam_mulai} - ${booking.jam_selesai}\n` +
+                    `🔗 Link: ${zoomResult.join_url}\n` +
+                    `🆔 ID Meeting: ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
+                    `🔑 Password: ${zoomResult.password || '-'}`;
+                await client.sendMessage(IT_NUMBER, notifMsg);
+            } catch (e) {
+                console.error('❌ Gagal kirim notif ke IT:', e.message);
+            }
             userMenuState.set(from, 'zoom');
             // Tampilkan menu Zoom lagi
             const submenuMsg =
@@ -437,6 +463,19 @@ Ketik angka sesuai pilihan.`;
             fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
             await new Promise(res => setTimeout(res, 2000));
             await msg.reply('Zoom meeting berhasil dibatalkan.');
+            // Notifikasi ke IT
+            try {
+                const notifMsg =
+                    `Zoom meeting telah dibatalkan oleh ${nomorTo08(from)}\n` +
+                    `Topik: ${meeting.topic}\n` +
+                    `Tanggal: ${meeting.tgl}\n` +
+                    `Jam: ${meeting.jam}\n` +
+                    `ID Meeting: ${meeting.id || '-'}\n` +
+                    `Link: ${meeting.url || '-'}`;
+                await client.sendMessage(IT_NUMBER, notifMsg);
+            } catch (e) {
+                console.error('❌ Gagal kirim notif cancel ke IT:', e.message);
+            }
             // Tampilkan submenu setelah hapus
             let submenuMsg =
                 `*ZOOM MEETING*\n` +
@@ -611,6 +650,22 @@ Ketik angka sesuai pilihan.`;
                 fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('Booking rapat berhasil dibatalkan.');
+                // Notifikasi ke IT jika ada link Zoom
+                if (rapat.butuh_zoom && rapat.zoom_id) {
+                    try {
+                        const notifMsg =
+                            `Zoom meeting telah dibatalkan oleh ${nomorTo08(from)}\n` +
+                            `Agenda: ${rapat.agenda}\n` +
+                            `Tanggal: ${rapat.tanggal}\n` +
+                            `Jam: ${rapat.jam} - ${rapat.jam_selesai}\n` +
+                            `Ruang: ${rapat.ruang}\n` +
+                            `ID Meeting: ${rapat.zoom_id || '-'}\n` +
+                            `Link: ${rapat.zoom_link || '-'}`;
+                        await client.sendMessage(IT_NUMBER, notifMsg);
+                    } catch (e) {
+                        console.error('❌ Gagal kirim notif cancel ke IT:', e.message);
+                    }
+                }
                 // Tampilkan submenu setelah hapus booking
                 let submenuMsg =
                     `*BOOKING RUANG RAPAT*\n` +
@@ -1106,6 +1161,23 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply(
                     `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}${konsumsiMsg}`
                 );
+                // Notifikasi ke IT jika ada link Zoom
+                if (booking.butuh_zoom && zoomInfo) {
+                    try {
+                        const notifMsg =
+                            `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
+                            `Agenda: ${booking.agenda}\n` +
+                            `Tanggal: ${booking.tanggal}\n` +
+                            `Jam: ${booking.jam} - ${booking.jam_selesai}\n` +
+                            `Ruang: ${booking.ruang}\n` +
+                            `🔗 Link: ${zoomInfo.join_url}\n` +
+                            `🆔 ID Meeting: ${zoomInfo.personal_meeting_id || zoomInfo.id || '-'}\n` +
+                            `🔑 Password: ${zoomInfo.password || '-'}`;
+                        await client.sendMessage(IT_NUMBER, notifMsg);
+                    } catch (e) {
+                        console.error('❌ Gagal kirim notif ke IT:', e.message);
+                    }
+                }
                 // Tampilkan menu booking lagi
                 const submenuMsg =
                     `*BOOKING RUANG RAPAT*
