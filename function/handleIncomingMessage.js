@@ -166,12 +166,172 @@ Ketik angka sesuai pilihan.`;
 
     // Handler submenu Zoom Meeting - buat link zoom
     if (userMenuState.get(from) === 'zoom' && text === '2') {
-        userMenuState.set(from, 'zoom-create');
+        userMenuState.set(from, 'zoom-create-form');
+        userBookingData.set(from, { step: 1 });
         await new Promise(res => setTimeout(res, 2000));
-        await msg.reply('Silakan ketik detail meeting Zoom dengan format:\n' +
-            '`topik: [topik] tanggal: [YYYY-MM-DD] jam: [HH:mm] [sampai HH:mm opsional]`\n' +
-            'Contoh: `topik: Rapat Proyek tanggal: 2024-07-01 jam: 14:00 sampai 15:00`');
+        await msg.reply('Masukkan topik meeting Zoom:');
         return;
+    }
+
+    // Handler form step-by-step Zoom Meeting
+    if (userMenuState.get(from) === 'zoom-create-form') {
+        let booking = userBookingData.get(from) || { step: 1 };
+        // Step 1: Topik
+        if (booking.step === 1) {
+            if (!text || text.length < 3) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Topik tidak boleh kosong. Masukkan topik meeting Zoom:');
+                return;
+            }
+            booking.topic = msg.body.trim();
+            booking.step = 2;
+            userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply('Masukkan tanggal meeting Zoom (format: YYYY-MM-DD):');
+            return;
+        }
+        // Step 2: Tanggal
+        if (booking.step === 2) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Format tanggal salah. Masukkan tanggal meeting Zoom (format: YYYY-MM-DD):');
+                return;
+            }
+            const today = dayjs().format('YYYY-MM-DD');
+            if (text < today) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Tanggal meeting tidak boleh sebelum hari ini. Masukkan tanggal meeting Zoom (format: YYYY-MM-DD):');
+                return;
+            }
+            booking.tanggal = text;
+            booking.step = 3;
+            userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply('Masukkan jam mulai meeting Zoom (format: HH:mm, contoh: 13:30):');
+            return;
+        }
+        // Step 3: Jam mulai
+        if (booking.step === 3) {
+            if (!/^\d{2}:\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Format jam salah. Masukkan jam mulai meeting Zoom (format: HH:mm, contoh: 13:30):');
+                return;
+            }
+            // Validasi jam mulai tidak boleh sebelum waktu sekarang jika tanggal hari ini
+            const now = dayjs();
+            if (booking.tanggal === now.format('YYYY-MM-DD')) {
+                const jamNow = now.format('HH:mm');
+                if (text < jamNow) {
+                    await new Promise(res => setTimeout(res, 2000));
+                    await msg.reply('Jam mulai tidak boleh sebelum waktu sekarang. Masukkan jam mulai meeting Zoom (format: HH:mm, contoh: 13:30):');
+                    return;
+                }
+            }
+            booking.jam_mulai = text;
+            booking.step = 4;
+            userBookingData.set(from, booking);
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply('Masukkan jam selesai meeting Zoom (format: HH:mm, contoh: 15:00):');
+            return;
+        }
+        // Step 4: Jam selesai
+        if (booking.step === 4) {
+            if (!/^\d{2}:\d{2}$/.test(text)) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Format jam salah. Masukkan jam selesai meeting Zoom (format: HH:mm, contoh: 15:00):');
+                return;
+            }
+            // Validasi jam selesai harus lebih besar dari jam mulai
+            const toMinutes = jam => {
+                const [h, m] = jam.split(':').map(Number);
+                return h * 60 + m;
+            };
+            if (toMinutes(text) <= toMinutes(booking.jam_mulai)) {
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('Jam selesai harus lebih besar dari jam mulai. Masukkan jam selesai meeting Zoom (format: HH:mm, contoh: 15:00):');
+                return;
+            }
+            booking.jam_selesai = text;
+            booking.step = 5;
+            userBookingData.set(from, booking);
+            // Proses pembuatan Zoom
+            // Siapkan data
+            const dateStr = booking.tanggal;
+            const jamMulai = booking.jam_mulai;
+            const jamSelesai = booking.jam_selesai;
+            const dateTimeStr = `${dateStr} ${jamMulai}`;
+            const meetingTime = dayjs.tz(dateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+            const isoStart = meetingTime.utc().format();
+            let isoEnd = null;
+            if (jamSelesai) {
+                const endDateTimeStr = `${dateStr} ${jamSelesai}`;
+                const endTime = dayjs.tz(endDateTimeStr, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
+                isoEnd = endTime.utc().format();
+            }
+            // Ambil log Zoom
+            let logFile = './meeting_log.json';
+            let logs = [];
+            if (fs.existsSync(logFile)) {
+                try {
+                    const raw = fs.readFileSync(logFile, 'utf8');
+                    logs = JSON.parse(raw);
+                    if (!Array.isArray(logs)) logs = [];
+                } catch { logs = []; }
+            }
+            // Cek & buat Zoom
+            const userData = getUserFromContext(nomor);
+            const { meeting: zoomResult, accountIdx, schedule_for } = await createZoomMeetingWithConflict(
+                booking.topic,
+                isoStart,
+                isoEnd,
+                checkMeetingConflict,
+                logs
+            );
+            if (!zoomResult) {
+                userBookingData.delete(from);
+                await new Promise(res => setTimeout(res, 2000));
+                await msg.reply('❌ Jadwal Zoom bentrok/konflik dengan meeting lain di kedua akun Zoom. Silakan pilih waktu lain.');
+                userMenuState.set(from, 'zoom');
+                return;
+            }
+            // Simpan log Zoom
+            logs.push({
+                nomor_user: from,
+                employe_id: userData.employeeId,
+                nama: userData.nama,
+                topic: booking.topic,
+                jam: meetingTime.format('HH:mm'),
+                tgl: booking.tanggal,
+                url: zoomResult.join_url || '',
+                id: zoomResult.id || '',
+                account: accountIdx,
+                schedule_for: schedule_for
+            });
+            fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+            userBookingData.delete(from);
+            await msg.reply(
+                `Zoom meeting berhasil dibuat!\n` +
+                `Topik: ${booking.topic}\n` +
+                `Tanggal: ${booking.tanggal}\n` +
+                `Jam: ${booking.jam_mulai} - ${booking.jam_selesai}\n` +
+                `🔗 Link: ${zoomResult.join_url}\n` +
+                `🆔 ID Meeting: ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
+                `🔑 Password: ${zoomResult.password || '-'}`
+            );
+            userMenuState.set(from, 'zoom');
+            // Tampilkan menu Zoom lagi
+            const submenuMsg =
+                `*ZOOM MEETING*\n` +
+                `1. Zoom meeting yang akan datang\n` +
+                `2. Buat link Zoom\n` +
+                `3. Cancel Zoom meeting\n` +
+                `4. Kembali ke menu utama\n` +
+                `5. Keluar menu\n` +
+                `Ketik angka sesuai pilihan.`;
+            await new Promise(res => setTimeout(res, 2000));
+            await msg.reply(submenuMsg);
+            return;
+        }
     }
 
     // Handler submenu Zoom Meeting - cancel zoom meeting
