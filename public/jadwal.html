@@ -118,7 +118,12 @@
       ruangList.forEach(r => ruangMap[r] = []);
       data.forEach(r => {
         // Pastikan nama ruang cocok persis (case sensitive)
-        if (ruangMap[r.ruang]) ruangMap[r.ruang].push(r);
+        if (ruangMap[r.ruang]) ruangMap[r.ruang].push({
+          jam: r.jam,
+          jam_selesai: r.jam_selesai,
+          agenda: r.agenda,
+          pic_name: r.pic_name
+        });
       });
 
       ruangList.forEach(ruang => {
@@ -140,7 +145,12 @@
         });
         // Tambah slot kosong jika kurang dari 3 event
         for (let i = events.length; i < 3; i++) html += `<div class="event"></div>`;
-        document.getElementById('jadwal-' + ruang.toLowerCase().replace(' ', '-')).innerHTML = html;
+        // Cek apakah elemen target ada sebelum set innerHTML
+        const elId = 'jadwal-' + ruang.toLowerCase().replace(' ', '-');
+        const el = document.getElementById(elId);
+        if (el) {
+          el.innerHTML = html;
+        }
       });
     }
     renderJadwal();
