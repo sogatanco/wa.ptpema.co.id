@@ -32,6 +32,8 @@ const userBookingData = new Map();
 const IT_NUMBER = '6282285658594@c.us';
 // Nomor konsumsi untuk notifikasi
 const KONSUMSI_NUMBER = '6285260967173@c.us';
+// Nama PIC konsumsi
+const PIC_KONSUMSI = 'Bapak Muttaqin';
 
 // Helper untuk konversi nomor 62 ke 08
 function nomorTo08(nomor) {
@@ -1159,7 +1161,7 @@ Ketik angka sesuai pilihan.`;
 
                 let konsumsiMsg = '';
                 if (booking.butuh_konsumsi) {
-                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}`;
+                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}\n\n  Silakan jumpai ${PIC_KONSUMSI}/${KONSUMSI_NUMBER} untuk mengisi form permintaan konsumsi.`;
                 } else {
                     konsumsiMsg = 'Konsumsi: Tidak';
                 }
@@ -1206,7 +1208,7 @@ Ketik angka sesuai pilihan.`;
                             `Ruang: ${booking.ruang}\n` +
                             `Agenda: ${booking.agenda}\n` +
                             `Konsumsi: ${booking.konsumsi_detail}\n` +
-                            `Mohon konfirmasi ke nomor ${nomorTo08(from)}`;
+                            `Mohon konfirmasi ke nomor ${nomorTo08(from)}\n`
                         await client.sendMessage(KONSUMSI_NUMBER, notifKonsumsi);
                     } catch (e) {
                         console.error('❌ Gagal kirim notif konsumsi:', e.message);
