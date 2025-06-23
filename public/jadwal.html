@@ -62,7 +62,7 @@
 <body>
   <div class="header">
     <h1>JADWAL RAPAT HARI INI</h1>
-    <p>Senin, 23 Juni 2025</p>
+    <p id="tanggal-hari-ini"></p>
   </div>
   <div class="schedule">
     <div class="room">
@@ -96,6 +96,21 @@
       return pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    // Tampilkan hari dan tanggal hari ini secara otomatis
+    function setTanggalHariIni() {
+      const bulanIndo = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      const hariIndo = [
+        "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
+      ];
+      const now = new Date();
+      const str = hariIndo[now.getDay()] + ', ' + now.getDate() + ' ' + bulanIndo[now.getMonth()] + ' ' + now.getFullYear();
+      document.getElementById('tanggal-hari-ini').textContent = str;
+    }
+    setTanggalHariIni();
+
     // Ambil data dari API, bukan data dummy
     const ruangList = [
       "Ruang Growth", "Ruang Harmony", "Ruang Kopiah", "Ruang Internasional"
@@ -120,6 +135,8 @@
         // Pastikan nama ruang cocok persis (case sensitive)
         // Gunakan trim dan lowercase agar lebih toleran
         ruangList.forEach(ruangNama => {
+          // Perbaiki id target: jadwal-growth, jadwal-harmony, dst
+          // ruangNama: "Ruang Growth" -> id: jadwal-growth
           if (
             r.ruang &&
             r.ruang.trim().toLowerCase() === ruangNama.trim().toLowerCase()
@@ -139,22 +156,30 @@
         let html = '';
         // Urutkan berdasarkan jam mulai
         events.sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
-        events.forEach(ev => {
-          let bg = "#1e90ff";
-          // Cek apakah rapat sedang berlangsung
-          if (ev.jam && ev.jam_selesai && now >= ev.jam && now < ev.jam_selesai) {
-            bg = "#2ecc71";
-          }
-          html += `<div class="event" style="background-color:${bg};">
-            <div class="time">${ev.jam || '-'} – ${ev.jam_selesai || '-'}</div>
-            <div>${ev.agenda || '-'}</div>
-            <div style="font-size:13px;color:#fff;opacity:0.8;">PIC: ${ev.pic_name || '-'}</div>
-          </div>`;
-        });
-        // Tambah slot kosong jika kurang dari 3 event
-        for (let i = events.length; i < 3; i++) html += `<div class="event"></div>`;
+        if (events.length === 0) {
+          html = `<div class="event" style="background-color:#222;color:#ccc;text-align:center;">Belum ada jadwal hari ini</div>`;
+        } else {
+          events.forEach(ev => {
+            let bg = "#1e90ff";
+            // Cek apakah rapat sedang berlangsung
+            if (ev.jam && ev.jam_selesai && now >= ev.jam && now < ev.jam_selesai) {
+              bg = "#2ecc71";
+            }
+            // Batasi agenda hanya 1 baris, jika lebih tambahkan ...
+            let agenda = (ev.agenda || '-').split('\n')[0];
+            if (agenda.length > 40) agenda = agenda.slice(0, 40) + '...';
+            // Kapitalisasi awal setiap kata
+            agenda = agenda.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+            html += `<div class="event" style="background-color:${bg};">
+              <div class="time">${ev.jam || '-'} – ${ev.jam_selesai || '-'}</div>
+              <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${agenda}</div>
+              <div style="font-size:13px;color:#fff;opacity:0.8;">PIC: ${ev.pic_name || '-'}</div>
+            </div>`;
+          });
+        }
         // Cek apakah elemen target ada sebelum set innerHTML
-        const elId = 'jadwal-' + ruang.toLowerCase().replace(' ', '-');
+        let elId = 'jadwal-' + ruang.toLowerCase().replace(/ /g, '-');
+        elId = elId.replace(/^jadwal-ruang-/, 'jadwal-'); // jadwal-ruang-growth -> jadwal-growth
         const el = document.getElementById(elId);
         if (el) {
           el.innerHTML = html;
@@ -162,7 +187,7 @@
       });
     }
     renderJadwal();
-    setInterval(renderJadwal, 1000);
+    setInterval(renderJadwal, 100);
   </script>
 </body>
 </html>
