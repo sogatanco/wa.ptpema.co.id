@@ -8,7 +8,7 @@ import {
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
 // Tambahkan import:
-import { createZoomMeetingWithConflict } from './zoom.js';
+import { createZoomMeetingWithConflict, deleteZoomMeeting } from './zoom.js';
 import fs from 'fs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
@@ -325,7 +325,7 @@ Ketik angka sesuai pilihan.`;
                 `1. Zoom meeting yang akan datang\n` +
                 `2. Buat link Zoom\n` +
                 `3. Cancel Zoom meeting\n` +
-                `4. Kembali ke menu utama\n` +
+                `4. Kembali to menu utama\n` +
                 `5. Keluar menu\n` +
                 `Ketik angka sesuai pilihan.`;
             await new Promise(res => setTimeout(res, 2000));
@@ -381,6 +381,17 @@ Ketik angka sesuai pilihan.`;
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply('ID tidak ditemukan. Ketik ID Zoom meeting yang ingin dibatalkan:');
                 return;
+            }
+            // Hapus dari Zoom API jika ada ID meeting
+            if (meeting.id) {
+                try {
+                    // accountIdx dan schedule_for sudah dicatat di log
+                    let accountIdx = meeting.account || 1;
+                    await deleteZoomMeeting(meeting.id, accountIdx);
+                } catch (err) {
+                    console.error('❌ Gagal hapus meeting di Zoom API:', err.message);
+                    // Tetap lanjut hapus dari log lokal
+                }
             }
             // Hapus dari log
             let logFile = './meeting_log.json';

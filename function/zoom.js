@@ -122,3 +122,18 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     return { meeting: null, accountIdx: 0, schedule_for: null };
 };
 
+// Fungsi untuk menghapus meeting Zoom berdasarkan meeting ID dan accountIdx
+export const deleteZoomMeeting = async (meetingId, accountIdx = 1) => {
+    const token = await getZoomToken(accountIdx);
+    await axios.delete(
+        `https://api.zoom.us/v2/meetings/${meetingId}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    return true;
+};
+
