@@ -389,8 +389,6 @@ Ketik angka sesuai pilihan.`;
         userBookingData.set(from, { step: 'select-cancel-zoom', userMeetings });
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(listMsg);
-        await new Promise(res => setTimeout(res, 2000));
-        await msg.reply(submenuMsg);
         return;
     }
 
@@ -521,8 +519,6 @@ Ketik angka sesuai pilihan.`;
         userBookingData.set(from, { step: 'select-cancel', userRapat });
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(listMsg);
-        await new Promise(res => setTimeout(res, 2000));
-        await msg.reply(submenuMsg);
         return;
     }
 
