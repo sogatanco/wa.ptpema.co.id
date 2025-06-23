@@ -499,6 +499,38 @@ Ketik angka sesuai pilihan.`;
                     userBookingData.delete(from);
                     return;
                 }
+
+                // Jika booking punya Zoom, hapus juga di Zoom API
+                const rapat = rapatList[idx];
+                if (rapat.butuh_zoom && rapat.zoom_id) {
+                    try {
+                        // Cari log Zoom untuk dapatkan accountIdx
+                        let logFile = './meeting_log.json';
+                        let logs = [];
+                        if (fs.existsSync(logFile)) {
+                            try {
+                                const raw = fs.readFileSync(logFile, 'utf8');
+                                logs = JSON.parse(raw);
+                                if (!Array.isArray(logs)) logs = [];
+                            } catch { logs = []; }
+                        }
+                        const logZoom = logs.find(l => l.id == rapat.zoom_id && l.nomor_user === from);
+                        let accountIdx = logZoom && logZoom.account ? logZoom.account : 1;
+                        await deleteZoomMeeting(rapat.zoom_id, accountIdx);
+
+                        // Hapus juga dari log Zoom
+                        logs = logs.filter(l => !(l.id == rapat.zoom_id && l.nomor_user === from));
+                        fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+                    } catch (err) {
+                        // Jika error 404 (meeting sudah tidak ada di Zoom), abaikan
+                        if (err && err.response && err.response.status === 404) {
+                            console.warn('⚠️ Meeting Zoom sudah tidak ada di Zoom API, lanjut hapus booking.');
+                        } else {
+                            console.error('❌ Gagal hapus Zoom meeting saat cancel booking rapat:', err.message);
+                        }
+                    }
+                }
+
                 rapatList.splice(idx, 1);
                 fs.writeFileSync('./rapat.json', JSON.stringify(rapatList, null, 2));
                 await new Promise(res => setTimeout(res, 2000));
