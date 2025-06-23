@@ -21,7 +21,9 @@ const app = express();
 app.use(express.json());
 
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: path.join(process.cwd(), 'wadata') // simpan session di folder khusus
+    }),
     puppeteer: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
         headless: true,
