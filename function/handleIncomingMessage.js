@@ -181,7 +181,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 return;
             }
             // Buat folder temp/pengirim jika belum ada
-            const folder = path.resolve('temp', from.replace(/[^a-zA-Z0-9]/g, '_'));
+            const folder = path.resolve(process.cwd(), 'temp', from.replace(/[^a-zA-Z0-9]/g, '_'));
             if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
             // Tentukan nama file
             let filename = media.filename || `file_${Date.now()}`;
@@ -194,11 +194,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             // Simpan file (base64)
             fs.writeFileSync(filePath, media.data, { encoding: 'base64' });
 
-            // Upload ke Synology
+            // Upload ke Synology (gunakan path absolut)
             const nomorOnly = from.replace(/@.*$/, '');
             let uploadOk = false;
             let uploadError = '';
             try {
+                // Pastikan file benar-benar ada sebelum upload
+                if (!fs.existsSync(filePath)) {
+                    throw new Error('File tidak ditemukan di server.');
+                }
                 uploadOk = await uploadToSynology(filePath, nomorOnly);
             } catch (err) {
                 uploadError = err && err.message ? err.message : String(err);
