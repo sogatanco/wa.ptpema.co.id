@@ -176,8 +176,8 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     if (userMenuState.get(from) === 'upload' && msg.hasMedia) {
         try {
             const media = await msg.downloadMedia();
-            if (!media) {
-                await msg.reply('Gagal mengunduh file. Silakan coba lagi.');
+            if (!media || !media.data) {
+                await msg.reply('Gagal mengunduh file. Silakan coba lagi. (File kosong atau tidak dapat diakses)');
                 return;
             }
             // Buat folder temp/pengirim jika belum ada
@@ -221,7 +221,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             }
             userMenuState.delete(from);
         } catch (err) {
-            await msg.reply('Gagal menyimpan file. Silakan coba lagi.');
+            await msg.reply('Gagal mengunduh file. Silakan coba lagi. (Error: ' + (err && err.message ? err.message : err) + ')');
             console.error('❌ Gagal simpan file upload:', err);
         }
         return;
