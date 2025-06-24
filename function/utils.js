@@ -142,6 +142,8 @@ export async function uploadToSynology(localFilePath, nomor) {
     const passwd = 'Ptpema2019';
     const pathUpload = `/PUBLIC/8. Bahan Rapat/${nomor}`;
     try {
+        // Gunakan import dinamis untuk https.Agent agar tidak error di ESM
+        const { Agent } = await import('https');
         // Get SID
         const loginRes = await axios.get(`${synoUrl}/auth.cgi`, {
             params: {
@@ -153,7 +155,7 @@ export async function uploadToSynology(localFilePath, nomor) {
                 session: 'FileStation',
                 format: 'sid'
             },
-            httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false })
+            httpsAgent: new Agent({ rejectUnauthorized: false })
         });
         const sid = loginRes.data && loginRes.data.data && loginRes.data.data.sid;
         if (!sid) throw new Error('Gagal mendapatkan SID Synology');
@@ -175,7 +177,7 @@ export async function uploadToSynology(localFilePath, nomor) {
                 headers: form.getHeaders(),
                 maxContentLength: Infinity,
                 maxBodyLength: Infinity,
-                httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false })
+                httpsAgent: new Agent({ rejectUnauthorized: false })
             }
         );
         return uploadRes.data && uploadRes.data.success;
