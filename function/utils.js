@@ -138,7 +138,7 @@ export function isMeetingConflict(meetings, newMeeting) {
  */
 export async function uploadToSynology(localFilePath, nomor) {
     const synoUrl = 'https://8.222.244.160:65497/webapi';
-    const account = 'raungrapat';
+    const account = 'ruangrapat';
     const passwd = 'Ptpema2019';
     const pathUpload = `/PUBLIC/8. Bahan Rapat/${nomor}`;
     try {

@@ -208,10 +208,11 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 uploadError = err && err.message ? err.message : String(err);
             }
             if (uploadOk) {
-                await msg.reply(`File berhasil di-upload ke Mini PC Ruang Rapat Silakan Akses (/PUBLIC/8. Bahan Rapat/nomorOnly/${filename}) di Synology Mini PC Ruang Rapat.`);
-                // Hapus folder temp user setelah upload sukses
+                await msg.reply(`File berhasil di-upload ke Mini PC Ruang Rapat Silakan Akses (/PUBLIC/8. Bahan Rapat/${nomorOnly}/${filename}) di Synology Mini PC Ruang Rapat.`);
+                // Hapus file dan folder temp user setelah upload sukses
                 try {
-                    fs.rmSync(folder, { recursive: true, force: true });
+                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                    if (fs.existsSync(folder)) fs.rmdirSync(folder, { recursive: true });
                 } catch (e) {
                     // ignore error
                 }
