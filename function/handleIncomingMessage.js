@@ -196,7 +196,13 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
 
             // Upload ke Synology
             const nomorOnly = from.replace(/@.*$/, '');
-            const uploadOk = await uploadToSynology(filePath, nomorOnly);
+            let uploadOk = false;
+            let uploadError = '';
+            try {
+                uploadOk = await uploadToSynology(filePath, nomorOnly);
+            } catch (err) {
+                uploadError = err && err.message ? err.message : String(err);
+            }
             if (uploadOk) {
                 await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}) dan Synology.`);
                 // Hapus folder temp user setelah upload sukses
@@ -206,7 +212,8 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                     // ignore error
                 }
             } else {
-                await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}), namun gagal upload ke Synology.`);
+                let reason = uploadError ? `\nAlasan: ${uploadError}` : '';
+                await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}), namun gagal upload ke Synology.${reason}`);
             }
             userMenuState.delete(from);
         } catch (err) {
