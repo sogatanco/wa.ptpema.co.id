@@ -850,7 +850,8 @@ Ketik angka sesuai pilihan.`;
             `*MENU UTAMA*
 1. Booking Ruang Rapat
 2. Zoom Meeting
-3. Keluar`;
+3. Upload file ke PC Ruang Rapat
+0. Keluar`;
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply('Anda kembali ke menu utama.\n\n' + menuMsg);
         return;
