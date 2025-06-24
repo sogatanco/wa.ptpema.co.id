@@ -94,9 +94,57 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             `*MENU UTAMA*
 1. Booking Ruang Rapat
 2. Zoom Meeting
-3. Keluar`;
+3. Upload file ke PC Ruang Rapat
+0. Keluar`;
         await new Promise(res => setTimeout(res, 2000));
         await msg.reply(menuMsg);
+        return;
+    }
+
+    // Handler keluar dari menu utama
+    if (userMenuState.get(from) === 'main' && text === '0') {
+        userMenuState.delete(from);
+        userBookingData.delete(from);
+        await new Promise(res => setTimeout(res, 2000));
+        await msg.reply('Anda telah keluar dari menu.');
+        return;
+    }
+
+    // Handler upload file ke PC Ruang Rapat
+    if (userMenuState.get(from) === 'main' && text === '3') {
+        userMenuState.set(from, 'upload');
+        await new Promise(res => setTimeout(res, 2000));
+        await msg.reply('Silakan kirim file yang mau di-upload ke PC Ruang Rapat.');
+        return;
+    }
+
+    // Handler upload file: jika state upload dan user mengirim file
+    if (userMenuState.get(from) === 'upload' && msg.hasMedia) {
+        try {
+            const media = await msg.downloadMedia();
+            if (!media) {
+                await msg.reply('Gagal mengunduh file. Silakan coba lagi.');
+                return;
+            }
+            // Buat folder temp/pengirim jika belum ada
+            const folder = `./temp/${from.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+            // Tentukan nama file
+            let filename = media.filename || `file_${Date.now()}`;
+            // Jika tidak ada ekstensi, gunakan dari mimetype
+            if (!/\.[a-z0-9]+$/i.test(filename) && media.mimetype) {
+                const ext = media.mimetype.split('/')[1];
+                filename += '.' + ext;
+            }
+            const filePath = `${folder}/${filename}`;
+            // Simpan file (base64)
+            fs.writeFileSync(filePath, media.data, { encoding: 'base64' });
+            await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}).`);
+            userMenuState.delete(from);
+        } catch (err) {
+            await msg.reply('Gagal menyimpan file. Silakan coba lagi.');
+            console.error('❌ Gagal simpan file upload:', err);
+        }
         return;
     }
 
