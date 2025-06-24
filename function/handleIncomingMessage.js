@@ -4,7 +4,8 @@ import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil,
     getUserFromContext,
     isMeetingConflict,
-    checkMeetingConflict // tambahkan import ini
+    checkMeetingConflict,
+    uploadToSynology // <-- import fungsi uploadToSynology dari utils
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
 // Tambahkan import:
@@ -13,6 +14,7 @@ import fs from 'fs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
+
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -118,6 +120,57 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
         return;
     }
 
+    // Fungsi upload file ke Synology
+    // async function uploadToSynology(localFilePath, nomor) {
+    //     // 1. Login untuk dapatkan SID
+    //     const synoUrl = 'https://8.222.244.160:65351/webapi';
+    //     const account = 'wahyudin';
+    //     const passwd = 'Ptpema2019';
+    //     const pathUpload = `/PUBLIC/8. Bahan Rapat/${nomor}`;
+    //     try {
+    //         // Get SID
+    //         const loginRes = await axios.get(`${synoUrl}/auth.cgi`, {
+    //             params: {
+    //                 api: 'SYNO.API.Auth',
+    //                 version: 6,
+    //                 method: 'login',
+    //                 account,
+    //                 passwd,
+    //                 session: 'FileStation',
+    //                 format: 'sid'
+    //             },
+    //             httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false })
+    //         });
+    //         const sid = loginRes.data && loginRes.data.data && loginRes.data.data.sid;
+    //         if (!sid) throw new Error('Gagal mendapatkan SID Synology');
+
+    //         // Upload file
+    //         const form = new FormData();
+    //         form.append('api', 'SYNO.FileStation.Upload');
+    //         form.append('version', '2');
+    //         form.append('method', 'upload');
+    //         form.append('path', pathUpload);
+    //         form.append('create_parents', 'true');
+    //         form.append('overwrite', 'true');
+    //         form.append('file', fs.createReadStream(localFilePath), path.basename(localFilePath));
+
+    //         const uploadRes = await axios.post(
+    //             `${synoUrl}/entry.cgi?_sid=${sid}`,
+    //             form,
+    //             {
+    //                 headers: form.getHeaders(),
+    //                 maxContentLength: Infinity,
+    //                 maxBodyLength: Infinity,
+    //                 httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false })
+    //             }
+    //         );
+    //         return uploadRes.data && uploadRes.data.success;
+    //     } catch (err) {
+    //         console.error('❌ Gagal upload ke Synology:', err.message);
+    //         return false;
+    //     }
+    // }
+
     // Handler upload file: jika state upload dan user mengirim file
     if (userMenuState.get(from) === 'upload' && msg.hasMedia) {
         try {
@@ -139,7 +192,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             const filePath = `${folder}/${filename}`;
             // Simpan file (base64)
             fs.writeFileSync(filePath, media.data, { encoding: 'base64' });
-            await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}).`);
+
+            // Upload ke Synology
+            const nomorOnly = from.replace(/@.*$/, '');
+            const uploadOk = await uploadToSynology(filePath, nomorOnly);
+            if (uploadOk) {
+                await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}) dan Synology.`);
+            } else {
+                await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}), namun gagal upload ke Synology.`);
+            }
             userMenuState.delete(from);
         } catch (err) {
             await msg.reply('Gagal menyimpan file. Silakan coba lagi.');
