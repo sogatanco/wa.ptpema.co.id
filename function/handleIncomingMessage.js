@@ -14,6 +14,7 @@ import fs from 'fs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
+import path from 'path';
 
 
 dayjs.extend(utc);
@@ -180,7 +181,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 return;
             }
             // Buat folder temp/pengirim jika belum ada
-            const folder = `./temp/${from.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const folder = path.resolve('temp', from.replace(/[^a-zA-Z0-9]/g, '_'));
             if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
             // Tentukan nama file
             let filename = media.filename || `file_${Date.now()}`;
@@ -189,7 +190,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 const ext = media.mimetype.split('/')[1];
                 filename += '.' + ext;
             }
-            const filePath = `${folder}/${filename}`;
+            const filePath = path.join(folder, filename);
             // Simpan file (base64)
             fs.writeFileSync(filePath, media.data, { encoding: 'base64' });
 
@@ -198,6 +199,12 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
             const uploadOk = await uploadToSynology(filePath, nomorOnly);
             if (uploadOk) {
                 await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}) dan Synology.`);
+                // Hapus folder temp user setelah upload sukses
+                try {
+                    fs.rmSync(folder, { recursive: true, force: true });
+                } catch (e) {
+                    // ignore error
+                }
             } else {
                 await msg.reply(`File berhasil di-upload ke PC Ruang Rapat (${filename}), namun gagal upload ke Synology.`);
             }
