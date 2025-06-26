@@ -11,28 +11,32 @@
       background-color: #F8F8FF;
       color: white;
     }
-    .header {
+    .header-box {
+      padding: 18px 10px 12px;
+      margin: 24px;
+  
       text-align: center;
-      padding: 20px 10px 10px;
     }
-    .header h1 {
+    .header-box h1 {
       margin: 0;
       font-size: 36px;
+      color: #222c3a;
     }
-    .header p {
-      margin: 5px 0;
+    .header-box p {
+      margin: 5px 0 0 0;
       font-size: 18px;
+      color: #222c3a;
     }
     .schedule {
       display: flex;
       justify-content: space-around;
-      padding: 20px;
+      padding: 10px;
     }
     .room {
-      background-color: #1b263b;
+      background-color: #97b4e9;
       padding: 10px;
       border-radius: 10px;
-      width: 20%;
+      width: 23%;
     }
     .room h2 {
       font-size: 18px;
@@ -60,9 +64,9 @@
   </style>
 </head>
 <body>
-  <div class="header" style="color: #222c3a;">
-    <h1>JADWAL RAPAT HARI INI</h1>
-    <p id="tanggal-hari-ini"></p>
+  <div class="header-box" >
+    <h1 style="margin:0;font-size:36px;color:#222c3a;">JADWAL RAPAT HARI INI</h1>
+    <p id="tanggal-hari-ini" style="margin:5px 0 0 0;font-size:18px;color:#222c3a;"></p>
   </div>
   <div class="schedule">
     <div class="room">
@@ -89,11 +93,11 @@
   </div>
   <!-- Barcode image dan tulisan dalam satu box di sudut kanan bawah -->
   <div style="position:fixed;right:20px;bottom:20px;z-index:150;
-              background:#222c3a;box-shadow:0 2px 8px #00000055;
+              background:#b8c5d8;box-shadow:0 2px 8px #18181855;
               border-radius:16px;display:flex;flex-direction:column;align-items:center;
               padding:12px 12px 8px 12px;width:auto;max-width:180px;">
     <img id="barcode-img" src="qrcode.png" alt="Barcode" style="width:150px;height:150px;border-radius:10px;">
-    <div style="margin-top:8px;text-align:center;font-size:13px;color:#eee;font-family:Arial,sans-serif;white-space:nowrap;">
+    <div style="margin-top:8px;text-align:center;font-size:13px;color:#222;font-family:Arial,sans-serif;white-space:nowrap;">
       Scan untuk booking
     </div>
   </div>
@@ -167,10 +171,10 @@
         // Urutkan berdasarkan jam mulai
         events.sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
         if (events.length === 0) {
-          html = `<div class="event" style="background-color:#222;color:#ccc;text-align:center;">Belum ada jadwal hari ini</div>`;
+          html = `<div class="event" style="background-color:#3e403f;color:#ccc;text-align:center;">Belum ada jadwal hari ini</div>`;
         } else {
           events.forEach(ev => {
-            let bg = "#1e90ff";
+            let bg = "#3e403f";
             // Cek apakah rapat sedang berlangsung
             if (ev.jam && ev.jam_selesai && now >= ev.jam && now < ev.jam_selesai) {
               bg = "#2ecc71";
