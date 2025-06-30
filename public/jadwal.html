@@ -134,7 +134,8 @@
       const now = nowTime();
       let data = [];
       try {
-        const res = await fetch('http://62.72.56.65:3000/api/jadwal-rapat');
+        // Ganti ke endpoint HTTPS domain yang sudah di-tunnel lewat cloudflared
+        const res = await fetch('https://app.ptpema.co.id/api/jadwal-rapat');
         if (res.ok) data = await res.json();
       } catch {}
       // Filter hanya hari ini
