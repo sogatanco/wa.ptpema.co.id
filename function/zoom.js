@@ -92,11 +92,42 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
+    // Ambil tanggal dan jam dari start_time_iso
+    const tgl = start_time_iso.slice(0, 10);
+    const jam = start_time_iso.slice(11, 16);
+
+    // Helper: cek bentrok berdasarkan waktu (bukan hanya email)
+    function isTimeConflict(logs, tgl, jam, end_time_iso, schedule_for) {
+        // Konversi jam ke menit
+        const toMinutes = (str) => {
+            const [h, m] = str.split(':').map(Number);
+            return h * 60 + m;
+        };
+        const startA = toMinutes(jam);
+        let endA = startA + 60;
+        if (end_time_iso) {
+            const jamSelesai = end_time_iso.slice(11, 16);
+            endA = toMinutes(jamSelesai);
+        }
+        return logs.some(m => {
+            if (m.tgl !== tgl) return false;
+            if (schedule_for && m.schedule_for && m.schedule_for !== schedule_for) return false;
+            if (!m.jam) return false;
+            const startB = toMinutes(m.jam);
+            let endB = startB + 60;
+            if (m.jam_selesai) {
+                endB = toMinutes(m.jam_selesai);
+            } else if (m.jam && m.tgl && m.url) {
+                // fallback: assume 1 hour
+                endB = startB + 60;
+            }
+            // Cek overlap
+            return (startA < endB && endA > startB);
+        });
+    }
+
     // Cek conflict untuk akun 1 dengan schedule_for mitrapema@gmail.com
-    const conflictMitra = logs.some(m =>
-        m.tgl === start_time_iso.slice(0, 10) &&
-        m.schedule_for === 'mitrapema@gmail.com'
-    );
+    const conflictMitra = isTimeConflict(logs, tgl, jam, end_time_iso, 'mitrapema@gmail.com');
     if (!conflictMitra) {
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'),
@@ -106,10 +137,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     }
 
     // Jika conflict, cek akun 1 dengan schedule_for pembangunanaceh.pema@gmail.com
-    const conflictPembangunan = logs.some(m =>
-        m.tgl === start_time_iso.slice(0, 10) &&
-        m.schedule_for === 'pembangunanaceh.pema@gmail.com'
-    );
+    const conflictPembangunan = isTimeConflict(logs, tgl, jam, end_time_iso, 'pembangunanaceh.pema@gmail.com');
     if (!conflictPembangunan) {
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'),
