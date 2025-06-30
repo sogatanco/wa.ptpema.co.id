@@ -96,36 +96,38 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     const tgl = start_time_iso.slice(0, 10);
     const jam = start_time_iso.slice(11, 16);
 
-    // Helper: cek bentrok berdasarkan waktu (bukan hanya email)
-    function isTimeConflict(logs, tgl, jam, end_time_iso, schedule_for) {
+    // Helper: cek bentrok berdasarkan waktu (jam mulai & selesai) dan schedule_for
+    function isTimeConflict(logs, tgl, jamMulai, jamSelesai, schedule_for) {
         const toMinutes = (str) => {
             const [h, m] = str.split(':').map(Number);
             return h * 60 + m;
         };
-        const startA = toMinutes(jam);
-        let endA = startA + 60;
-        if (end_time_iso) {
-            const jamSelesai = end_time_iso.slice(11, 16);
-            endA = toMinutes(jamSelesai);
-        }
+        const startA = toMinutes(jamMulai);
+        let endA = jamSelesai ? toMinutes(jamSelesai) : startA + 60;
+
         return logs.some(m => {
             if (m.tgl !== tgl) return false;
             if (!m.jam) return false;
             // Cek schedule_for sesuai
             if (m.schedule_for && schedule_for && m.schedule_for !== schedule_for) return false;
             const startB = toMinutes(m.jam);
-            let endB = startB + 60;
-            if (m.jam_selesai) {
-                endB = toMinutes(m.jam_selesai);
-            } else if (m.jam && m.tgl && m.url) {
-                endB = startB + 60;
-            }
+            let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
+            // Cek overlap
             return (startA < endB && endA > startB);
         });
     }
 
+    // Ambil jam selesai dari end_time_iso jika ada
+    const jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null;
+
     // Cek conflict schedule_for mitrapema@gmail.com
-    const conflictMitra = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso, 'mitrapema@gmail.com');
+    const conflictMitra = isTimeConflict(
+        logs.filter(m => m.account === 1),
+        tgl,
+        jam,
+        jamSelesai,
+        'mitrapema@gmail.com'
+    );
     if (!conflictMitra) {
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'),
@@ -135,7 +137,13 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     }
 
     // Jika bentrok di mitrapema, cek pembangunanaceh.pema@gmail.com
-    const conflictPembangunan = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso, 'pembangunanaceh.pema@gmail.com');
+    const conflictPembangunan = isTimeConflict(
+        logs.filter(m => m.account === 1),
+        tgl,
+        jam,
+        jamSelesai,
+        'pembangunanaceh.pema@gmail.com'
+    );
     if (!conflictPembangunan) {
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'),
