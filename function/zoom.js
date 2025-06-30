@@ -98,7 +98,6 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 
     // Helper: cek bentrok berdasarkan waktu (bukan hanya email)
     function isTimeConflict(logs, tgl, jam, end_time_iso, schedule_for) {
-        // Konversi jam ke menit
         const toMinutes = (str) => {
             const [h, m] = str.split(':').map(Number);
             return h * 60 + m;
@@ -111,25 +110,23 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         }
         return logs.some(m => {
             if (m.tgl !== tgl) return false;
-            // Perbaikan: jangan filter schedule_for, cukup cek semua meeting di akun ini
             if (!m.jam) return false;
+            // Cek schedule_for sesuai
+            if (m.schedule_for && schedule_for && m.schedule_for !== schedule_for) return false;
             const startB = toMinutes(m.jam);
             let endB = startB + 60;
             if (m.jam_selesai) {
                 endB = toMinutes(m.jam_selesai);
             } else if (m.jam && m.tgl && m.url) {
-                // fallback: assume 1 hour
                 endB = startB + 60;
             }
-            // Cek overlap
             return (startA < endB && endA > startB);
         });
     }
 
-    // Cek conflict untuk akun 1 (semua schedule_for/email di akun 1)
-    const conflictAkun1 = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso);
-    if (!conflictAkun1) {
-        // Default: pakai mitrapema@gmail.com
+    // Cek conflict schedule_for mitrapema@gmail.com
+    const conflictMitra = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso, 'mitrapema@gmail.com');
+    if (!conflictMitra) {
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'),
             accountIdx: 1,
@@ -137,14 +134,17 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         };
     }
 
-    // Cek conflict untuk akun 2 (jika ada, atau fallback ke akun 1 dengan email lain)
-    // Jika ingin support akun 2, tambahkan di sini. Jika tidak, tetap pakai akun 1 dengan email lain.
-    // Cek akun 1 dengan schedule_for pembangunanaceh.pema@gmail.com, tapi tetap filter bentrok di akun 1
-    // (Jika ingin benar-benar multi-akun, perlu logs dari akun 2 juga)
-    // Untuk sekarang, tetap filter di account 1
-    // Jika ingin pakai akun 2, tambahkan log/accountIdx sesuai implementasi multi-akun Anda
+    // Jika bentrok di mitrapema, cek pembangunanaceh.pema@gmail.com
+    const conflictPembangunan = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso, 'pembangunanaceh.pema@gmail.com');
+    if (!conflictPembangunan) {
+        return {
+            meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'),
+            accountIdx: 1,
+            schedule_for: 'pembangunanaceh.pema@gmail.com'
+        };
+    }
 
-    // Jika kedua email conflict, return null
+    // Jika keduanya bentrok, return null
     return { meeting: null, accountIdx: 0, schedule_for: null };
 };
 
