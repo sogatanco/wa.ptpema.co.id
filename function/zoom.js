@@ -108,8 +108,8 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         return logs.some(m => {
             if (m.tgl !== tgl) return false;
             if (!m.jam) return false;
-            // Cek schedule_for sesuai
-            if (m.schedule_for && schedule_for && m.schedule_for !== schedule_for) return false;
+            // Hanya cek bentrok jika schedule_for sama persis
+            if ((m.schedule_for || '').toLowerCase() !== (schedule_for || '').toLowerCase()) return false;
             const startB = toMinutes(m.jam);
             let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
             // Cek overlap
