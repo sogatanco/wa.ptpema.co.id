@@ -478,9 +478,10 @@ Ketik angka sesuai pilihan.`;
             try {
                 const notifMsg =
                     `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
-                    `Topik: ${booking.topic}\n` +
+                    `Agenda: ${booking.agenda}\n` +
                     `Tanggal: ${booking.tanggal}\n` +
-                    `Jam: ${booking.jam_mulai} - ${booking.jam_selesai}\n` +
+                    `Jam: ${booking.jam} - ${booking.jam_selesai}\n` +
+                    `Ruang: ${booking.ruang}\n` +
                     `🔗 Link: ${zoomResult.join_url}\n` +
                     `🆔 ID Meeting: ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
                     `🔑 Password: ${zoomResult.password || '-'}`;
@@ -599,7 +600,7 @@ Ketik angka sesuai pilihan.`;
             try {
                 const notifMsg =
                     `Zoom meeting telah dibatalkan oleh ${nomorTo08(from)}\n` +
-                    `Topik: ${meeting.topic}\n` +
+                    `Agenda: ${meeting.topic}\n` +
                     `Tanggal: ${meeting.tgl}\n` +
                     `Jam: ${meeting.jam}\n` +
                     `ID Meeting: ${meeting.id || '-'}\n` +
@@ -774,6 +775,8 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply('Booking rapat berhasil dibatalkan.');
                 // Notifikasi ke IT jika ada link Zoom
                 if (rapat.butuh_zoom && rapat.zoom_id) {
+                    let notifSent = false;
+                    let notifError = '';
                     try {
                         const notifMsg =
                             `Zoom meeting telah dibatalkan oleh ${nomorTo08(from)}\n` +
@@ -784,8 +787,13 @@ Ketik angka sesuai pilihan.`;
                             `ID Meeting: ${rapat.zoom_id || '-'}\n` +
                             `Link: ${rapat.zoom_link || '-'}`;
                         await client.sendMessage(IT_NUMBER, notifMsg);
+                        notifSent = true;
                     } catch (e) {
-                        console.error('❌ Gagal kirim notif cancel ke IT:', e.message);
+                        notifError = e && e.message ? e.message : String(e);
+                        console.error('❌ Gagal kirim notif cancel ke IT:', notifError);
+                    }
+                    if (!notifSent) {
+                        await msg.reply('⚠️ Notifikasi pembatalan ke nomor IT belum terkirim. Silakan hubungi IT secara manual. Alasan: ' + notifError);
                     }
                 }
                 // Notifikasi ke konsumsi jika butuh konsumsi
@@ -1292,6 +1300,8 @@ Ketik angka sesuai pilihan.`;
                 );
                 // Notifikasi ke IT jika ada link Zoom
                 if (booking.butuh_zoom && zoomInfo) {
+                    let notifSent = false;
+                    let notifError = '';
                     try {
                         const notifMsg =
                             `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
@@ -1303,8 +1313,13 @@ Ketik angka sesuai pilihan.`;
                             `🆔 ID Meeting: ${zoomInfo.personal_meeting_id || zoomInfo.id || '-'}\n` +
                             `🔑 Password: ${zoomInfo.password || '-'}`;
                         await client.sendMessage(IT_NUMBER, notifMsg);
+                        notifSent = true;
                     } catch (e) {
-                        console.error('❌ Gagal kirim notif ke IT:', e.message);
+                        notifError = e && e.message ? e.message : String(e);
+                        console.error('❌ Gagal kirim notif ke IT:', notifError);
+                    }
+                    if (!notifSent) {
+                        await msg.reply('⚠️ Notifikasi ke nomor IT belum terkirim. Silakan hubungi IT secara manual. Alasan: ' + notifError);
                     }
                 }
                 // Notifikasi ke konsumsi jika butuh konsumsi
