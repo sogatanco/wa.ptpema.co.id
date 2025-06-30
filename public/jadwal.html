@@ -14,7 +14,6 @@
     .header-box {
       padding: 18px 10px 12px;
       margin: 24px;
-  
       text-align: center;
     }
     .header-box h1 {
@@ -31,12 +30,19 @@
       display: flex;
       justify-content: space-around;
       padding: 10px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
     .room {
       background-color: #97b4e9;
       padding: 10px;
       border-radius: 10px;
       width: 23%;
+      min-width: 220px;
+      box-sizing: border-box;
+      margin-bottom: 16px;
+      flex: 1 1 220px;
+      max-width: 350px;
     }
     .room h2 {
       font-size: 18px;
@@ -60,6 +66,87 @@
       text-align: center;
       color: #888;
       margin-top: 10px;
+    }
+    /* Responsive styles */
+    @media (max-width: 900px) {
+      .schedule {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .room {
+        width: 45%;
+        min-width: 180px;
+        max-width: 100%;
+      }
+    }
+    @media (max-width: 600px) {
+      .header-box {
+        margin: 8px;
+        padding: 10px 4px 8px 4px;
+      }
+      .header-box h1 {
+        font-size: 22px;
+      }
+      .header-box p {
+        font-size: 14px;
+      }
+      .schedule {
+        flex-direction: column;
+        padding: 4px;
+        gap: 8px;
+      }
+      .room {
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 10px;
+        padding: 8px;
+      }
+      .room h2 {
+        font-size: 15px;
+      }
+      .event {
+        font-size: 14px;
+        padding: 7px;
+      }
+      .more {
+        font-size: 12px;
+      }
+    }
+    @media (max-width: 400px) {
+      .header-box h1 {
+        font-size: 16px;
+      }
+      .header-box p {
+        font-size: 11px;
+      }
+      .room h2 {
+        font-size: 12px;
+      }
+      .event {
+        font-size: 11px;
+        padding: 5px;
+      }
+    }
+    /* Barcode box responsive */
+    @media (max-width: 600px) {
+      #barcode-img {
+        width: 90px !important;
+        height: 90px !important;
+      }
+      .barcode-box {
+        max-width: 110px !important;
+        padding: 8px 8px 4px 8px !important;
+      }
+    }
+    @media (max-width: 400px) {
+      #barcode-img {
+        width: 60px !important;
+        height: 60px !important;
+      }
+      .barcode-box {
+        max-width: 70px !important;
+        padding: 4px 4px 2px 4px !important;
+      }
     }
   </style>
 </head>
@@ -92,7 +179,7 @@
     </div>
   </div>
   <!-- Barcode image dan tulisan dalam satu box di sudut kanan bawah -->
-  <div style="position:fixed;right:20px;bottom:20px;z-index:150;
+  <div class="barcode-box" style="position:fixed;right:20px;bottom:20px;z-index:150;
               background:#b8c5d8;box-shadow:0 2px 8px #18181855;
               border-radius:16px;display:flex;flex-direction:column;align-items:center;
               padding:12px 12px 8px 12px;width:auto;max-width:180px;">
