@@ -1296,7 +1296,7 @@ Ketik angka sesuai pilihan.`;
                 }
 
                 await msg.reply(
-                    `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}${konsumsiMsg}`
+                    `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}${konsumsiMsg}\n\nUntuk jadwal rapat hari ini dapat dilihat di https://app.ptpema.co.id/jadwal-rapat`
                 );
                 // Notifikasi ke IT jika ada link Zoom
                 if (booking.butuh_zoom && zoomInfo) {
