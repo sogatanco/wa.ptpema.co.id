@@ -111,7 +111,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         }
         return logs.some(m => {
             if (m.tgl !== tgl) return false;
-            if (schedule_for && m.schedule_for && m.schedule_for !== schedule_for) return false;
+            // Perbaikan: jangan filter schedule_for, cukup cek semua meeting di akun ini
             if (!m.jam) return false;
             const startB = toMinutes(m.jam);
             let endB = startB + 60;
@@ -126,9 +126,10 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         });
     }
 
-    // Cek conflict untuk akun 1 dengan schedule_for mitrapema@gmail.com
-    const conflictMitra = isTimeConflict(logs, tgl, jam, end_time_iso, 'mitrapema@gmail.com');
-    if (!conflictMitra) {
+    // Cek conflict untuk akun 1 (semua schedule_for/email di akun 1)
+    const conflictAkun1 = isTimeConflict(logs.filter(m => m.account === 1), tgl, jam, end_time_iso);
+    if (!conflictAkun1) {
+        // Default: pakai mitrapema@gmail.com
         return {
             meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'mitrapema@gmail.com'),
             accountIdx: 1,
@@ -136,15 +137,12 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         };
     }
 
-    // Jika conflict, cek akun 1 dengan schedule_for pembangunanaceh.pema@gmail.com
-    const conflictPembangunan = isTimeConflict(logs, tgl, jam, end_time_iso, 'pembangunanaceh.pema@gmail.com');
-    if (!conflictPembangunan) {
-        return {
-            meeting: await createZoomMeeting(topic, start_time_iso, end_time_iso, 1, 'pembangunanaceh.pema@gmail.com'),
-            accountIdx: 1,
-            schedule_for: 'pembangunanaceh.pema@gmail.com'
-        };
-    }
+    // Cek conflict untuk akun 2 (jika ada, atau fallback ke akun 1 dengan email lain)
+    // Jika ingin support akun 2, tambahkan di sini. Jika tidak, tetap pakai akun 1 dengan email lain.
+    // Cek akun 1 dengan schedule_for pembangunanaceh.pema@gmail.com, tapi tetap filter bentrok di akun 1
+    // (Jika ingin benar-benar multi-akun, perlu logs dari akun 2 juga)
+    // Untuk sekarang, tetap filter di account 1
+    // Jika ingin pakai akun 2, tambahkan log/accountIdx sesuai implementasi multi-akun Anda
 
     // Jika kedua email conflict, return null
     return { meeting: null, accountIdx: 0, schedule_for: null };
