@@ -1,7 +1,7 @@
 import fs from 'fs';
 import dayjs from 'dayjs';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
-import { createZoomMeeting, createZoomMeetingWithConflict } from './zoom.js';
+import { createZoomMeetingWithConflict } from './zoom.js';
 import {
     checkMeetingConflict,
     getFutureMeetings,
