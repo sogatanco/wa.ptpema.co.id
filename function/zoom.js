@@ -116,7 +116,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         console.log(
             `[${idx}] log.tgl:`, m.tgl,
             'log.jam:', m.jam,
-            'log.jam_selesai:', m.jam_selesai,
+            'log.jam_selesai:', m.jam_selesai || m.jam + ':60',
             'log.schedule_for:', m.schedule_for
         );
     });
