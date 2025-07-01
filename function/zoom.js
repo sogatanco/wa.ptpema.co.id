@@ -133,32 +133,24 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         let endA = jamSelesai ? toMinutes(jamSelesai) : startA + 60;
 
         return logsArr.some(m => {
-            if ((m.schedule_for || '').toLowerCase() === (schedule_for || '').toLowerCase()) {
-                if (m.tgl !== tgl) {
-                    // Debug tgl mismatch
-                    console.log('  [NO CONFLICT] tgl beda:', m.tgl, 'vs', tgl);
-                    return false;
-                }
-                if (!m.jam) {
-                    console.log('  [NO CONFLICT] log.jam kosong');
-                    return false;
-                }
-                const startB = toMinutes(m.jam);
-                let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
-                const overlap = (startA < endB && endA > startB);
-                // Debug overlap
-                console.log(
-                    `  [CHECK] tgl: ${m.tgl}, schedule_for: ${m.schedule_for}, startA: ${startA}, endA: ${endA}, startB: ${startB}, endB: ${endB}, overlap: ${overlap}`
-                );
-                return overlap;
-            }
-            return false;
+            // Cek schedule_for, tgl, jam mulai, jam selesai
+            if ((m.schedule_for || '').toLowerCase() !== (schedule_for || '').toLowerCase()) return false;
+            if ((m.tgl || '').trim() !== tgl.trim()) return false;
+            if (!m.jam) return false;
+            const startB = toMinutes(m.jam);
+            let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
+            // Debug overlap
+            const overlap = (startA < endB && endA > startB);
+            console.log(
+                `[CONFLICT CHECK] tgl: ${m.tgl}, schedule_for: ${m.schedule_for}, startA: ${startA}, endA: ${endA}, startB: ${startB}, endB: ${endB}, overlap: ${overlap}`
+            );
+            return overlap;
         });
     }
 
     // Cek conflict schedule_for mitrapema@gmail.com
     const conflictMitra = isTimeConflict(
-        Array.isArray(logs) ? logs.filter(m => m.account === 1) : [],
+        logs.filter(m => m.account === 1),
         tgl,
         jamMulai,
         jamSelesai,
@@ -174,7 +166,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 
     // Jika bentrok di mitrapema, cek pembangunanaceh.pema@gmail.com
     const conflictPembangunan = isTimeConflict(
-        Array.isArray(logs) ? logs.filter(m => m.account === 1) : [],
+        logs.filter(m => m.account === 1),
         tgl,
         jamMulai,
         jamSelesai,
@@ -244,4 +236,5 @@ export const deleteZoomMeeting = async (meetingId, accountIdx = 1) => {
         return false;
     }
 }
+ 
 
