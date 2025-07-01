@@ -10,40 +10,6 @@ export function normalizeNomor(n) {
     return (n || '').replace(/[^0-9]/g, '').replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
 }
 
-export function checkMeetingConflict(logs, meetingTime, accountIdx = 1) {
-    // Pastikan meetingTime adalah dayjs object
-    let dayjsMeetingTime;
-    if (typeof meetingTime.format === 'function') {
-        dayjsMeetingTime = meetingTime;
-    } else {
-        dayjsMeetingTime = dayjs(meetingTime);
-    }
-    return logs.some(m => {
-        // Filter hanya untuk account yang sesuai jika ada field account
-        if (m.account && m.account !== accountIdx) return false;
-        if (m.tgl !== dayjsMeetingTime.format('YYYY-MM-DD')) return false;
-        const mTime = dayjs.tz(`${m.tgl} ${m.jam}`, 'YYYY-MM-DD HH:mm', 'Asia/Jakarta');
-        const diff = Math.abs(dayjsMeetingTime.diff(mTime, 'minute'));
-        return diff < 60;
-    });
-}
-
-export function getFutureMeetings(logs) {
-    const today = dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD');
-    return logs
-        .filter(m => m.tgl >= today)
-        .sort((a, b) => {
-            if (a.tgl === b.tgl) {
-                return a.jam.localeCompare(b.jam);
-            }
-            return a.tgl.localeCompare(b.tgl);
-        });
-}
-
-export function toTitleCase(str) {
-    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-}
-
 export function getUserFromContext(nomor) {
     let nama = '';
     let employeeId = '';
@@ -71,9 +37,7 @@ export function getUserFromContext(nomor) {
                 employeeId = found.employe_id || found.employee_id || found.nip || found.nik || '';
             }
         }
-    } catch (e) {
-        // ignore
-    }
+    } catch (e) {}
     return { nama, employeeId };
 }
 
@@ -103,29 +67,23 @@ export function loadNomorTerdaftar() {
  * @returns {boolean} true jika ada konflik, false jika tidak
  */
 export function isMeetingConflict(meetings, newMeeting) {
-    // Pastikan jam mulai dan jam selesai valid
     if (!newMeeting.jam || !newMeeting.jam_selesai) return false;
     const tanggal = newMeeting.tanggal;
     const ruang = newMeeting.ruang;
     const startA = newMeeting.jam;
     const endA = newMeeting.jam_selesai;
-
-    // Helper: konversi jam ke menit
     const toMinutes = jam => {
         const [h, m] = jam.split(':').map(Number);
         return h * 60 + m;
     };
-
     const startAMin = toMinutes(startA);
     const endAMin = toMinutes(endA);
-
     return meetings.some(m => {
         if (m.tanggal !== tanggal) return false;
         if (m.ruang !== ruang) return false;
         if (!m.jam || !m.jam_selesai) return false;
         const startBMin = toMinutes(m.jam);
         const endBMin = toMinutes(m.jam_selesai);
-        // Cek overlap
         return (startAMin < endBMin && endAMin > startBMin);
     });
 }
@@ -142,9 +100,7 @@ export async function uploadToSynology(localFilePath, nomor) {
     const passwd = 'Ptpema2019';
     const pathUpload = `/PUBLIC/8. Bahan Rapat/${nomor}`;
     try {
-        // Gunakan import dinamis untuk https.Agent agar tidak error di ESM
         const { Agent } = await import('https');
-        // Get SID
         const loginRes = await axios.get(`${synoUrl}/auth.cgi`, {
             params: {
                 api: 'SYNO.API.Auth',
@@ -159,8 +115,6 @@ export async function uploadToSynology(localFilePath, nomor) {
         });
         const sid = loginRes.data && loginRes.data.data && loginRes.data.data.sid;
         if (!sid) throw new Error('Gagal mendapatkan SID Synology');
-
-        // Upload file
         const form = new FormData();
         form.append('api', 'SYNO.FileStation.Upload');
         form.append('version', '2');
@@ -169,7 +123,6 @@ export async function uploadToSynology(localFilePath, nomor) {
         form.append('create_parents', 'true');
         form.append('overwrite', 'true');
         form.append('file', fs.createReadStream(localFilePath), path.basename(localFilePath));
-
         const uploadRes = await axios.post(
             `${synoUrl}/entry.cgi?_sid=${sid}`,
             form,
@@ -186,3 +139,4 @@ export async function uploadToSynology(localFilePath, nomor) {
         return false;
     }
 }
+   
