@@ -4,7 +4,6 @@ import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil,
     getUserFromContext,
     isMeetingConflict,
-    checkMeetingConflict,
     uploadToSynology // <-- import fungsi uploadToSynology dari utils
 } from './utils.js';
 import { handleZoomMeeting } from './zoomMeetingHandler.js';
@@ -1309,7 +1308,6 @@ Ketik angka sesuai pilihan.`;
                         booking.agenda || 'Meeting Ruang Rapat',
                         isoStart,
                         isoEnd,
-                        checkMeetingConflict,
                         logs
                     );
 
