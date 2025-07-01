@@ -286,7 +286,22 @@ Ketik angka sesuai pilihan.`;
         if (fs.existsSync(logFile)) {
             try {
                 const raw = fs.readFileSync(logFile, 'utf8');
-                logs = JSON.parse(raw);
+                // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                    // Single array
+                    logs = JSON.parse(raw);
+                } else {
+                    // Coba split jika ada beberapa array JSON (misal: ][)
+                    const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                        // Tambahkan [ di awal dan ] di akhir jika perlu
+                        if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                        if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                        if (idx > 0) part = '[' + part;
+                        if (idx < arr.length - 1) part = part + ']';
+                        return JSON.parse(part);
+                    });
+                    logs = [].concat(...arrays);
+                }
                 if (!Array.isArray(logs)) logs = [];
             } catch { logs = []; }
         }
@@ -430,7 +445,22 @@ Ketik angka sesuai pilihan.`;
             if (fs.existsSync(logFile)) {
                 try {
                     const raw = fs.readFileSync(logFile, 'utf8');
-                    logs = JSON.parse(raw);
+                    // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                    if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                        // Single array
+                        logs = JSON.parse(raw);
+                    } else {
+                        // Coba split jika ada beberapa array JSON (misal: ][)
+                        const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                            // Tambahkan [ di awal dan ] di akhir jika perlu
+                            if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                            if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                            if (idx > 0) part = '[' + part;
+                            if (idx < arr.length - 1) part = part + ']';
+                            return JSON.parse(part);
+                        });
+                        logs = [].concat(...arrays);
+                    }
                     if (!Array.isArray(logs)) logs = [];
                 } catch { logs = []; }
             }
@@ -513,7 +543,22 @@ Ketik angka sesuai pilihan.`;
         if (fs.existsSync(logFile)) {
             try {
                 const raw = fs.readFileSync(logFile, 'utf8');
-                logs = JSON.parse(raw);
+                // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                    // Single array
+                    logs = JSON.parse(raw);
+                } else {
+                    // Coba split jika ada beberapa array JSON (misal: ][)
+                    const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                        // Tambahkan [ di awal dan ] di akhir jika perlu
+                        if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                        if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                        if (idx > 0) part = '[' + part;
+                        if (idx < arr.length - 1) part = part + ']';
+                        return JSON.parse(part);
+                    });
+                    logs = [].concat(...arrays);
+                }
                 if (!Array.isArray(logs)) logs = [];
             } catch { logs = []; }
         }
@@ -589,7 +634,22 @@ Ketik angka sesuai pilihan.`;
             if (fs.existsSync(logFile)) {
                 try {
                     const raw = fs.readFileSync(logFile, 'utf8');
-                    logs = JSON.parse(raw);
+                    // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                    if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                        // Single array
+                        logs = JSON.parse(raw);
+                    } else {
+                        // Coba split jika ada beberapa array JSON (misal: ][)
+                        const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                            // Tambahkan [ di awal dan ] di akhir jika perlu
+                            if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                            if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                            if (idx > 0) part = '[' + part;
+                            if (idx < arr.length - 1) part = part + ']';
+                            return JSON.parse(part);
+                        });
+                        logs = [].concat(...arrays);
+                    }
                     if (!Array.isArray(logs)) logs = [];
                 } catch { logs = []; }
             }
@@ -749,7 +809,22 @@ Ketik angka sesuai pilihan.`;
                         if (fs.existsSync(logFile)) {
                             try {
                                 const raw = fs.readFileSync(logFile, 'utf8');
-                                logs = JSON.parse(raw);
+                                // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                                if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                                    // Single array
+                                    logs = JSON.parse(raw);
+                                } else {
+                                    // Coba split jika ada beberapa array JSON (misal: ][)
+                                    const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                                        // Tambahkan [ di awal dan ] di akhir jika perlu
+                                        if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                                        if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                                        if (idx > 0) part = '[' + part;
+                                        if (idx < arr.length - 1) part = part + ']';
+                                        return JSON.parse(part);
+                                    });
+                                    logs = [].concat(...arrays);
+                                }
                                 if (!Array.isArray(logs)) logs = [];
                             } catch { logs = []; }
                         }
@@ -1208,7 +1283,22 @@ Ketik angka sesuai pilihan.`;
                     if (fs.existsSync(logFile)) {
                         try {
                             const raw = fs.readFileSync(logFile, 'utf8');
-                            logs = JSON.parse(raw);
+                            // Perbaikan: jika file berisi beberapa array JSON (misal hasil concat), gabungkan semua array
+                            if (raw.trim().startsWith('[') && raw.trim().endsWith(']')) {
+                                // Single array
+                                logs = JSON.parse(raw);
+                            } else {
+                                // Coba split jika ada beberapa array JSON (misal: ][)
+                                const arrays = raw.split(/\]\s*\[/).map((part, idx, arr) => {
+                                    // Tambahkan [ di awal dan ] di akhir jika perlu
+                                    if (idx === 0 && !part.startsWith('[')) part = '[' + part;
+                                    if (idx === arr.length - 1 && !part.endsWith(']')) part = part + ']';
+                                    if (idx > 0) part = '[' + part;
+                                    if (idx < arr.length - 1) part = part + ']';
+                                    return JSON.parse(part);
+                                });
+                                logs = [].concat(...arrays);
+                            }
                             if (!Array.isArray(logs)) logs = [];
                         } catch { logs = []; }
                     }

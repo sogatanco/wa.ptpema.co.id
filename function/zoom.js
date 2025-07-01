@@ -99,6 +99,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     const tgl = start_time_iso.slice(0, 10);
     const jamMulai = start_time_iso.slice(11, 16);
     const jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null;
+    console.log(tgl, jamMulai, jamSelesai);
 
     // Helper: cek bentrok schedule_for, tgl, jam mulai, jam selesai
     function isTimeConflict(logsArr, tgl, jamMulai, jamSelesai, schedule_for) {
@@ -110,12 +111,16 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         let endA = jamSelesai ? toMinutes(jamSelesai) : startA + 60;
 
         return logsArr.some(m => {
-            if ((m.schedule_for || '').toLowerCase() !== (schedule_for || '').toLowerCase()) return false;
-            if (m.tgl !== tgl) return false;
-            if (!m.jam) return false;
-            const startB = toMinutes(m.jam);
-            let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
-            return (startA < endB && endA > startB);
+            // Cek schedule_for, tgl, jam mulai, jam selesai
+            if ((m.schedule_for || '').toLowerCase() === (schedule_for || '').toLowerCase()) {
+                if (m.tgl !== tgl) return false;
+                if (!m.jam) return false;
+                const startB = toMinutes(m.jam);
+                let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
+                // Cek overlap
+                return (startA < endB && endA > startB);
+            }
+            return false;
         });
     }
 
