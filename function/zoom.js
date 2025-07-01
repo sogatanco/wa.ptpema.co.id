@@ -54,10 +54,7 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
     // Tentukan email schedule_for sesuai account
     let schedule_for = scheduleForEmail;
-    if (!schedule_for) {
-        schedule_for = accountIdx === 2 ? 'pembangunanaceh.pema@gmail.com' : 'mitrapema@gmail.com';
-    }
-
+   
     const payload = {
         topic,
         type: 2, // 2 = Scheduled Meeting
@@ -150,7 +147,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 
     // Cek conflict schedule_for mitrapema@gmail.com
     const conflictMitra = isTimeConflict(
-        logs.filter(m => m.account === 1),
+        logs,
         tgl,
         jamMulai,
         jamSelesai,
