@@ -92,13 +92,16 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, logs) => {
+    // Pastikan logs adalah array
+    if (!Array.isArray(logs)) logs = [];
+
     // Ambil tanggal dan jam dari start_time_iso
     const tgl = start_time_iso.slice(0, 10);
     const jamMulai = start_time_iso.slice(11, 16);
     const jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null;
 
     // Helper: cek bentrok schedule_for, tgl, jam mulai, jam selesai
-    function isTimeConflict(logs, tgl, jamMulai, jamSelesai, schedule_for) {
+    function isTimeConflict(logsArr, tgl, jamMulai, jamSelesai, schedule_for) {
         const toMinutes = (str) => {
             const [h, m] = str.split(':').map(Number);
             return h * 60 + m;
@@ -106,21 +109,19 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         const startA = toMinutes(jamMulai);
         let endA = jamSelesai ? toMinutes(jamSelesai) : startA + 60;
 
-        return logs.some(m => {
-            // Cek schedule_for, tgl, jam mulai, jam selesai
+        return logsArr.some(m => {
             if ((m.schedule_for || '').toLowerCase() !== (schedule_for || '').toLowerCase()) return false;
             if (m.tgl !== tgl) return false;
             if (!m.jam) return false;
             const startB = toMinutes(m.jam);
             let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
-            // Cek overlap
             return (startA < endB && endA > startB);
         });
     }
 
     // Cek conflict schedule_for mitrapema@gmail.com
     const conflictMitra = isTimeConflict(
-        logs.filter(m => m.account === 1),
+        Array.isArray(logs) ? logs.filter(m => m.account === 1) : [],
         tgl,
         jamMulai,
         jamSelesai,
@@ -136,7 +137,7 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 
     // Jika bentrok di mitrapema, cek pembangunanaceh.pema@gmail.com
     const conflictPembangunan = isTimeConflict(
-        logs.filter(m => m.account === 1),
+        Array.isArray(logs) ? logs.filter(m => m.account === 1) : [],
         tgl,
         jamMulai,
         jamSelesai,
