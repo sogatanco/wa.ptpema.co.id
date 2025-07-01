@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
 import { createZoomMeetingWithConflict } from './zoom.js';
 import {
-    checkMeetingConflict,
     getFutureMeetings,
     toTitleCase,
     getUserFromContext
@@ -96,7 +95,6 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
         topic,
         isoTime,
         end_time_iso,
-        checkMeetingConflict,
         logs
     );
 
