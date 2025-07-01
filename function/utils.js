@@ -10,6 +10,23 @@ export function normalizeNomor(n) {
     return (n || '').replace(/[^0-9]/g, '').replace(/^(\+?(\d{1,3}|0+))/, '').replace(/^0+/, '');
 }
 
+export function getFutureMeetings(logs) {
+    const today = dayjs().tz('Asia/Jakarta').format('YYYY-MM-DD');
+    return logs
+        .filter(m => m.tgl >= today)
+        .sort((a, b) => {
+            if (a.tgl === b.tgl) {
+                return a.jam.localeCompare(b.jam);
+            }
+            return a.tgl.localeCompare(b.tgl);
+        });
+}
+
+export function toTitleCase(str) {
+    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+
 export function getUserFromContext(nomor) {
     let nama = '';
     let employeeId = '';
