@@ -434,6 +434,7 @@ Ketik angka sesuai pilihan.`;
                     if (!Array.isArray(logs)) logs = [];
                 } catch { logs = []; }
             }
+            console.log(logs)
             // Cek & buat Zoom
             const userData = getUserFromContext(nomor);
             const { meeting: zoomResult, accountIdx, schedule_for } = await createZoomMeetingWithConflict(

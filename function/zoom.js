@@ -91,7 +91,7 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 };
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
-export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, checkMeetingConflict, logs) => {
+export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, logs) => {
     // Ambil tanggal dan jam dari start_time_iso
     const tgl = start_time_iso.slice(0, 10);
     const jamMulai = start_time_iso.slice(11, 16);
