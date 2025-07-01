@@ -471,9 +471,9 @@ Ketik angka sesuai pilihan.`;
                 booking.topic,
                 isoStart,
                 isoEnd,
-                checkMeetingConflict,
                 logs
             );
+
             if (!zoomResult) {
                 userBookingData.delete(from);
                 await new Promise(res => setTimeout(res, 2000));
@@ -492,7 +492,8 @@ Ketik angka sesuai pilihan.`;
                 url: zoomResult.join_url || '',
                 id: zoomResult.id || '',
                 account: accountIdx,
-                schedule_for: schedule_for
+                schedule_for: schedule_for,
+                jam_selesai: booking.jam_selesai // tambahkan jam_selesai ke log
             });
             fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
             userBookingData.delete(from);
