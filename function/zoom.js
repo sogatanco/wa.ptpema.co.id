@@ -92,14 +92,9 @@ export const createZoomMeeting = async (topic, start_time_iso, end_time_iso = nu
 
 // Fungsi untuk handle conflict dua account, gunakan schedule_for pada akun 1
 export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_time_iso, logs) => {
-    // Pastikan logs adalah array
     if (!Array.isArray(logs)) logs = [];
 
     // Ambil tanggal dan jam dari parameter (bukan dari ISO)
-    // start_time_iso dan end_time_iso dalam format ISO, tapi yang benar: 
-    // tgl = start_time_iso.slice(0, 10)
-    // jamMulai = start_time_iso.slice(11, 16)
-    // jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null
     let tgl = '', jamMulai = '', jamSelesai = '';
     if (start_time_iso) {
         const d = new Date(start_time_iso);
@@ -116,9 +111,19 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     } else {
         jamSelesai = '';
     }
-    // console.log('DEBUG tgl:', tgl, 'jamMulai:', jamMulai, 'jamSelesai:', jamSelesai);
 
-    // Helper: cek bentrok schedule_for, tgl, jam mulai, jam selesai
+    // Debug log: tampilkan parameter dan log yang dicek
+    console.log('=== Zoom Conflict Check ===');
+    console.log('Param tgl:', tgl, 'jamMulai:', jamMulai, 'jamSelesai:', jamSelesai);
+    logs.forEach((m, idx) => {
+        console.log(
+            `[${idx}] log.tgl:`, m.tgl,
+            'log.jam:', m.jam,
+            'log.jam_selesai:', m.jam_selesai,
+            'log.schedule_for:', m.schedule_for
+        );
+    });
+
     function isTimeConflict(logsArr, tgl, jamMulai, jamSelesai, schedule_for) {
         const toMinutes = (str) => {
             const [h, m] = str.split(':').map(Number);
@@ -129,12 +134,23 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
 
         return logsArr.some(m => {
             if ((m.schedule_for || '').toLowerCase() === (schedule_for || '').toLowerCase()) {
-                if (m.tgl !== tgl) return false;
-                if (!m.jam) return false;
+                if (m.tgl !== tgl) {
+                    // Debug tgl mismatch
+                    console.log('  [NO CONFLICT] tgl beda:', m.tgl, 'vs', tgl);
+                    return false;
+                }
+                if (!m.jam) {
+                    console.log('  [NO CONFLICT] log.jam kosong');
+                    return false;
+                }
                 const startB = toMinutes(m.jam);
                 let endB = m.jam_selesai ? toMinutes(m.jam_selesai) : startB + 60;
-                // Cek overlap
-                return (startA < endB && endA > startB);
+                const overlap = (startA < endB && endA > startB);
+                // Debug overlap
+                console.log(
+                    `  [CHECK] tgl: ${m.tgl}, schedule_for: ${m.schedule_for}, startA: ${startA}, endA: ${endA}, startB: ${startB}, endB: ${endB}, overlap: ${overlap}`
+                );
+                return overlap;
             }
             return false;
         });
