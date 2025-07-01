@@ -95,11 +95,28 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
     // Pastikan logs adalah array
     if (!Array.isArray(logs)) logs = [];
 
-    // Ambil tanggal dan jam dari start_time_iso
-    const tgl = start_time_iso.slice(0, 10);
-    const jamMulai = start_time_iso.slice(11, 16);
-    const jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null;
-    console.log(tgl, jamMulai, jamSelesai);
+    // Ambil tanggal dan jam dari parameter (bukan dari ISO)
+    // start_time_iso dan end_time_iso dalam format ISO, tapi yang benar: 
+    // tgl = start_time_iso.slice(0, 10)
+    // jamMulai = start_time_iso.slice(11, 16)
+    // jamSelesai = end_time_iso ? end_time_iso.slice(11, 16) : null
+    let tgl = '', jamMulai = '', jamSelesai = '';
+    if (start_time_iso) {
+        const d = new Date(start_time_iso);
+        tgl = d.getFullYear().toString().padStart(4, '0') + '-' +
+              (d.getMonth() + 1).toString().padStart(2, '0') + '-' +
+              d.getDate().toString().padStart(2, '0');
+        jamMulai = d.getHours().toString().padStart(2, '0') + ':' +
+                   d.getMinutes().toString().padStart(2, '0');
+    }
+    if (end_time_iso) {
+        const d2 = new Date(end_time_iso);
+        jamSelesai = d2.getHours().toString().padStart(2, '0') + ':' +
+                     d2.getMinutes().toString().padStart(2, '0');
+    } else {
+        jamSelesai = '';
+    }
+    // console.log('DEBUG tgl:', tgl, 'jamMulai:', jamMulai, 'jamSelesai:', jamSelesai);
 
     // Helper: cek bentrok schedule_for, tgl, jam mulai, jam selesai
     function isTimeConflict(logsArr, tgl, jamMulai, jamSelesai, schedule_for) {
@@ -111,7 +128,6 @@ export const createZoomMeetingWithConflict = async (topic, start_time_iso, end_t
         let endA = jamSelesai ? toMinutes(jamSelesai) : startA + 60;
 
         return logsArr.some(m => {
-            // Cek schedule_for, tgl, jam mulai, jam selesai
             if ((m.schedule_for || '').toLowerCase() === (schedule_for || '').toLowerCase()) {
                 if (m.tgl !== tgl) return false;
                 if (!m.jam) return false;
