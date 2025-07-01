@@ -483,7 +483,7 @@ Ketik angka sesuai pilihan.`;
             // Simpan log Zoom
             logs.push({
                 nomor_user: from,
-                employe_id: userData.employeeId,
+                employe_id: userData.EmployeeId,
                 nama: userData.nama,
                 topic: booking.topic,
                 jam: meetingTime.format('HH:mm'),
@@ -508,14 +508,16 @@ Ketik angka sesuai pilihan.`;
             // Notifikasi ke IT
             try {
                 const notifMsg =
-                    `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
-                    `Agenda: ${booking.agenda}\n` +
-                    `Tanggal: ${booking.tanggal}\n` +
-                    `Jam: ${booking.jam} - ${booking.jam_selesai}\n` +
-                    `Ruang: ${booking.ruang}\n` +
-                    `🔗 Link: ${zoomResult.join_url}\n` +
-                    `🆔 ID Meeting: ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
-                    `🔑 Password: ${zoomResult.password || '-'}`;
+                    `Zoom meeting baru telah dibuat:\n` +
+                    `Topik   : ${booking.topic}\n` +
+                    `Tanggal : ${booking.tanggal}\n` +
+                    `Jam     : ${booking.jam_mulai} - ${booking.jam_selesai}\n` +
+                    `PIC     : ${userData.nama || '-'} (${nomorTo08(from)})\n` +
+                    `Ruang   : ${booking.ruang || '-'}\n` +
+                    `Link    : ${zoomResult.join_url}\n` +
+                    `ID      : ${zoomResult.personal_meeting_id || zoomResult.id || '-'}\n` +
+                    `Password: ${zoomResult.password || '-'}\n` +
+                    `Akun Zoom: ${schedule_for || '-'}`
                 await client.sendMessage(IT_NUMBER, notifMsg);
             } catch (e) {
                 console.error('❌ Gagal kirim notif ke IT:', e.message);
@@ -1332,7 +1334,7 @@ Ketik angka sesuai pilihan.`;
                     // Simpan log Zoom
                     logs.push({
                         nomor_user: from,
-                        employe_id: userData.employeeId,
+                        employe_id: userData.EmployeeId,
                         nama: pic_name,
                         topic: booking.agenda || 'Meeting Ruang Rapat',
                         jam: meetingTime.format('HH:mm'),

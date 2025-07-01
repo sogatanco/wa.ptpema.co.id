@@ -46,6 +46,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
     }
 
     if (!topicMatch || !timeMatch || !dateMatch) {
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply(
             '❗ Mohon sertakan topik, tanggal, dan jam meeting.\n' +
             'Contoh:\n' +
@@ -106,6 +107,7 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
                 `${idx + 1}. *${toTitleCase(m.topic)}*\n   waktu: ${m.tgl} / ${m.jam}\n   ID: ${m.id || '-'}\n   PIC: ${m.nama || '-'}\n`
             ).join('');
         }
+        await new Promise(res => setTimeout(res, 2000));
         await msg.reply(replyMsg.trim());
         return;
     }
@@ -167,5 +169,6 @@ export async function handleZoomMeeting({ msg, nomor, GEMINI_API_KEY }) {
         console.error('❌ Gagal menyimpan log meeting:', e.message);
     }
 
+    await new Promise(res => setTimeout(res, 2000));
     await msg.reply(replyMsg.trim());
 }
