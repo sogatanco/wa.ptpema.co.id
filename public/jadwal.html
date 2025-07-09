@@ -24,6 +24,8 @@
       font-family: Arial, sans-serif;
       background-color: #F8F8FF;
       color: white;
+      max-width: 100vw;
+      overflow-x: hidden;
     }
     .header-box {
       padding: 18px 10px 12px;
@@ -43,24 +45,23 @@
     .schedule {
       width: 100vw;
       min-height: 60vh;
-      margin: 0;
-      padding: 10px;
+      margin: 0 auto;
+      padding: 10px 0;
       display: flex;
       flex-wrap: wrap;
       gap: 18px;
-      justify-content: flex-start;
+      justify-content: center;
       align-items: flex-start;
       box-sizing: border-box;
       max-width: 100vw;
-      overflow-x: auto;
+      overflow-x: hidden;
     }
     .room {
       background-color: #97b4e9;
       padding: 10px;
       border-radius: 10px;
       min-width: 0;
-      /* max-width: 350px; */
-      width: calc((100% - 3 * 18px) / 4); /* 4 room + 3 gap, 100% dari parent */
+      width: calc((100vw - 3 * 18px - 40px) / 4); /* 4 room + 3 gap + 2*20px margin */
       margin-bottom: 16px;
       flex: 1 1 0;
       display: flex;
@@ -68,11 +69,11 @@
       justify-content: flex-start;
       height: auto;
       box-sizing: border-box;
-      max-width: calc((100% - 3 * 18px) / 4);
-    }
-    .room:last-child {
+      max-width: calc((100vw - 3 * 18px - 40px) / 4);
+      margin-left: 0;
       margin-right: 0;
     }
+
     .room h2 {
       font-size: 18px;
       text-align: center;
@@ -100,28 +101,31 @@
     @media (min-width: 1200px) {
       .schedule {
         flex-wrap: nowrap;
+        justify-content: center;
       }
       .schedule .room {
         flex: 1 1 0;
-        width: calc((100% - 3 * 18px) / 4);
-        max-width: calc((100% - 3 * 18px) / 4);
+        width: calc((100vw - 3 * 18px - 40px) / 4);
+        max-width: calc((100vw - 3 * 18px - 40px) / 4);
         min-width: 180px;
       }
     }
     @media (min-width: 768px) and (max-width: 1199px) {
       .schedule {
         flex-wrap: wrap;
+        justify-content: center;
       }
       .schedule .room {
         flex: 1 1 45%;
-        width: calc((100% - 18px) / 2);
-        max-width: calc((100% - 18px) / 2);
+        width: calc((100vw - 18px - 40px) / 2);
+        max-width: calc((100vw - 18px - 40px) / 2);
         min-width: 180px;
       }
     }
     @media (max-width: 767px) {
       .schedule {
         flex-wrap: wrap;
+        justify-content: center;
       }
       .schedule .room {
         flex: 1 1 100%;
