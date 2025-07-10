@@ -272,6 +272,7 @@
       document.getElementById('tanggal-hari-ini').textContent = str;
     }
     setTanggalHariIni();
+    setInterval(setTanggalHariIni, 5 * 60 * 1000);
 
     // Ambil data dari API, bukan data dummy
     const ruangList = [
