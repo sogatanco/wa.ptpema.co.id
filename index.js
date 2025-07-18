@@ -69,6 +69,14 @@ client.on('error', (err) => {
     console.error('❌ WhatsApp client error:', err);
 });
 
+client.on('message', (msg) => {
+    handleIncomingMessage(msg, {
+        client,
+        GEMINI_API_KEY,
+        greetedNumbers,
+    });
+});
+
 console.log('⏳ Inisialisasi WhatsApp client...');
 client.initialize();
 console.log('📡 Menunggu QR code...');
