@@ -20,12 +20,9 @@ const app = express();
 
 app.use(express.json());
 
-// ========================
-// CLIENT 1 (Utama)
-// ========================
 const client = new Client({
     authStrategy: new LocalAuth({
-        dataPath: path.join(process.cwd(), 'wadata')
+        dataPath: path.join(process.cwd(), 'wadata') // simpan session di folder khusus
     }),
     puppeteer: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -35,8 +32,9 @@ const client = new Client({
 
 let isReady = false;
 
+// Tampilkan QR code di terminal
 client.on('qr', (qr) => {
-    console.log('🟢 [Client1] Scan QR untuk login WhatsApp:');
+    console.log('Silakan scan QR berikut untuk login WhatsApp:');
     qrcode.toString(qr, { type: 'terminal', small: true }, (err, qrAscii) => {
         if (err) return console.error('Gagal membuat QR:', err);
         console.log(qrAscii);
@@ -45,19 +43,19 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
     isReady = true;
-    console.log('✅ [Client1] WhatsApp client siap digunakan.');
+    console.log('✅ WhatsApp client siap digunakan.');
 });
 
 client.on('authenticated', () => {
-    console.log('🔐 [Client1] Berhasil terautentikasi.');
+    console.log('🔐 Berhasil terautentikasi.');
 });
 
 client.on('auth_failure', (msg) => {
-    console.error('❌ [Client1] Autentikasi gagal:', msg);
+    console.error('❌ Autentikasi gagal:', msg);
 });
 
 client.on('disconnected', () => {
-    console.log('⚠️ [Client1] WhatsApp client terputus.');
+    console.log('⚠️ WhatsApp client terputus.');
     isReady = false;
 });
 
@@ -69,84 +67,24 @@ client.on('error', (err) => {
     console.error('❌ WhatsApp client error:', err);
 });
 
+// Tambahkan log sebelum dan sesudah inisialisasi
 console.log('⏳ Inisialisasi WhatsApp client...');
 client.initialize();
 console.log('📡 Menunggu QR code...');
 
-const API_KEY = process.env.API_KEY;
-const KEY_SYS = process.env.KEY_SYS;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const API_KEY = process.env.API_KEY; // Dari .env
+const KEY_SYS = process.env.KEY_SYS; // Dari .env
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Tambahkan ke .env
 
+// State untuk melacak nomor yang sudah pernah dibalas otomatis
 const greetedNumbers = new Set();
 
-// ========================
-// CLIENT 2 (Tambahan - Hanya Menerima Pesan)
-// ========================
-const client2 = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: path.join(process.cwd(), 'wadata2')
-    }),
-    puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        headless: true,
-    },
-});
-
-let isReady2 = false;
-
-client2.on('qr', (qr) => {
-    console.log('🟣 [Client2] Scan QR untuk akun WA kedua:');
-    qrcode.toString(qr, { type: 'terminal', small: true }, (err, qrAscii) => {
-        if (err) return console.error('[Client2] Gagal QR:', err);
-        console.log(qrAscii);
-    });
-});
-
-client2.on('ready', () => {
-    isReady2 = true;
-    console.log('✅ [Client2] Siap menerima pesan.');
-});
-
-client2.on('authenticated', () => {
-    console.log('🔐 [Client2] Autentikasi berhasil.');
-});
-
-client2.on('auth_failure', (msg) => {
-    console.error('❌ [Client2] Gagal autentikasi:', msg);
-});
-
-client2.on('disconnected', () => {
-    isReady2 = false;
-    console.log('⚠️ [Client2] Terputus.');
-});
-
-client2.on('error', (err) => {
-    console.error('❌ [Client2] Error:', err);
-});
-
-// Hanya menerima pesan
-client2.on('message', (msg) => {
-    handleIncomingMessage(msg, {
-        client: client2,
-        GEMINI_API_KEY,
-        greetedNumbers,
-    });
-});
-
-console.log('⏳ Inisialisasi Client2...');
-client2.initialize();
-
-// ========================
-// API Endpoints
-// ========================
-
+// Endpoint cek status
 app.get('/status', apiKeyAuth(API_KEY), (req, res) => {
-    res.json({
-        client1: isReady,
-        client2: isReady2
-    });
+    res.json({ ready: isReady });
 });
 
+// Endpoint kirim pesan manual
 app.post('/send', apiKeyAuth(API_KEY), async (req, res) => {
     if (!isReady) return res.status(503).json({ error: 'WhatsApp belum siap.' });
 
@@ -167,17 +105,11 @@ app.post('/send', apiKeyAuth(API_KEY), async (req, res) => {
     }
 });
 
-// ========================
-// Polling
-// ========================
+// Polling API eksternal setiap 1 menit
 setInterval(() => pollAndSendMessages(isReady, KEY_SYS, formatTanggal, client), 2 * 60 * 1000);
 
-// ========================
-// MySQL Context (Tanpa Perubahan)
-// ========================
 const MYSQL_CONTEXT_ENABLED = process.env.MYSQL_CONTEXT_ENABLED === 'true';
 let dbConfig;
-
 if (MYSQL_CONTEXT_ENABLED) {
     dbConfig = {
         host: process.env.MYSQL_HOST,
@@ -185,11 +117,14 @@ if (MYSQL_CONTEXT_ENABLED) {
         password: process.env.MYSQL_PASSWORD,
         database: process.env.MYSQL_DATABASE,
         port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
+        // Tambahkan opsi lain jika perlu (misal ssl)
     };
 
+    // Ambil semua variabel env yang diawali MYSQL_CONTEXT_QUERY dan urutkan berdasar angka di akhir (atau kosong untuk utama)
     const contextQueries = Object.entries(process.env)
         .filter(([key]) => /^MYSQL_CONTEXT_QUERY(\d*)$/.test(key))
         .map(([key, value]) => {
+            // Ekstrak angka di akhir, kosong = 1 (utama), 2, 3, dst
             const m = key.match(/^MYSQL_CONTEXT_QUERY(\d*)$/);
             const idx = m && m[1] ? parseInt(m[1]) : 1;
             return { idx, value };
@@ -197,6 +132,7 @@ if (MYSQL_CONTEXT_ENABLED) {
         .sort((a, b) => a.idx - b.idx);
 
     contextQueries.forEach(({ idx, value }) => {
+        // context.txt untuk utama (idx==1), context2.txt dst untuk berikutnya
         const fileName = idx === 1 ? 'context.txt' : `context${idx}.txt`;
         console.log(`🔄 Mulai generate ${fileName} dari MySQL dengan query: ${value}`);
         generateContextFromMysql(dbConfig, value, fileName);
@@ -204,25 +140,32 @@ if (MYSQL_CONTEXT_ENABLED) {
     });
 }
 
-// ========================
-// Static Files & Jadwal Rapat
-// ========================
-app.use(express.static(path.join(process.cwd(), 'public')));
+// Pasang handler pada event message
+client.on('message', (msg) => handleIncomingMessage(msg, {
+    client,
+    GEMINI_API_KEY,
+    greetedNumbers
+}));
 
+// Serve static files (jadwal-rapat.html) dan alias /jadwal-rapat
+app.use(express.static(path.join(process.cwd(), 'public')));
 app.get('/jadwal-rapat', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'public', 'jadwal.html'));
 });
 
+// Allow CORS for /api/jadwal-rapat
 app.use('/api/jadwal-rapat', (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     next();
 });
 
+// Endpoint publik jadwal rapat (JSON)
 app.get('/api/jadwal-rapat', async (req, res) => {
     try {
         const file = path.join(process.cwd(), 'rapat.json');
         if (!fs.existsSync(file)) return res.json([]);
         const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+        // Tampilkan hanya rapat hari ini
         const today = new Date().toISOString().slice(0, 10);
         const filtered = (Array.isArray(data) ? data : []).filter(r => r.tanggal === today)
             .sort((a, b) => (a.jam || '').localeCompare(b.jam || ''));
@@ -232,9 +175,6 @@ app.get('/api/jadwal-rapat', async (req, res) => {
     }
 });
 
-// ========================
-// Start Server
-// ========================
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
     console.log(`🚀 Server jalan di port ${PORT}`);
@@ -242,9 +182,11 @@ const server = app.listen(PORT, () => {
 
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${PORT} sudah digunakan.`);
+        console.error(`❌ Port ${PORT} sudah digunakan. Silakan gunakan port lain atau matikan proses lain yang memakai port ini.`);
         process.exit(1);
     } else {
         console.error('❌ Server error:', err);
     }
 });
+
+
