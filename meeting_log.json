@@ -1,0 +1,48 @@
+[
+  {
+    "nomor_user": "6285243157957@c.us",
+    "nama": "Odria Vadillah",
+    "topic": "weekley meeting indag",
+    "jam": "12:00",
+    "tgl": "2025-07-23",
+    "url": "https://us06web.zoom.us/j/89708007001?pwd=DsGUSWQEQj3bsd7e1oFKce5uzOjHUA.1",
+    "id": 89708007001,
+    "account": 1,
+    "schedule_for": "mitrapema@gmail.com"
+  },
+  {
+    "nomor_user": "6282210851279@c.us",
+    "nama": "Saidina Gamal Abdel ",
+    "topic": "Meeting Internal Project Karbon",
+    "jam": "20:00",
+    "tgl": "2025-07-23",
+    "url": "https://us06web.zoom.us/j/87568187487?pwd=ZRwdQddaLa8UICbpKQiT6INB7pAMbR.1",
+    "id": 87568187487,
+    "account": 1,
+    "schedule_for": "mitrapema@gmail.com",
+    "jam_selesai": "21:00"
+  },
+  {
+    "nomor_user": "6285243157957",
+    "employe_id": "202103032",
+    "nama": "Odria Vadillah",
+    "topic": "Rapat dengan KOPIAH terkait Bisnis di Bidang Telekomunikasi",
+    "jam": "10:30",
+    "tgl": "2025-07-25",
+    "url": "https://us06web.zoom.us/j/88163914483?pwd=QJhJuYA5ryBkaLuZlQbf5Zk2ss3AsY.1",
+    "id": 88163914483,
+    "account": 1,
+    "schedule_for": "mitrapema@gmail.com"
+  },
+  {
+    "nomor_user": "6282285658594@c.us",
+    "nama": "Wahyudin",
+    "topic": "rapat internal",
+    "jam": "17:00",
+    "tgl": "2025-07-29",
+    "url": "https://us06web.zoom.us/j/84320471445?pwd=tH8npvdQnyvxARGupdYawE9jWq8USa.1",
+    "id": 84320471445,
+    "account": 1,
+    "schedule_for": "mitrapema@gmail.com"
+  }
+]

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WA AutoSender Terminal</title>
+  <HTA:APPLICATION
+    ID="wa_gui"
+    APPLICATIONNAME="WA AutoSender"
+    BORDER="thick"
+    SCROLL="auto"
+    SINGLEINSTANCE="yes"
+    SYSMENU="yes"
+  />
+  <script language="VBScript">
+    Dim shell, fso, outputFilePath
+    Set shell = CreateObject("WScript.Shell")
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    outputFilePath = shell.CurrentDirectory & "\output.txt"
+
+    Sub window_onload()
+      ' Hapus output lama jika ada
+      If fso.FileExists(outputFilePath) Then
+        On Error Resume Next
+        fso.DeleteFile outputFilePath, True
+        On Error GoTo 0
+      End If
+
+      ' Jalankan Node.js dengan path lengkap ke node.exe
+      ' GANTI PATH node.exe sesuai lokasi node kamu
+      nodePath = """C:\Program Files\nodejs\node.exe"""
+      shell.Run "cmd /c " & nodePath & " index.js > """ & outputFilePath & """ 2>&1", 0, False
+
+      ' Mulai polling untuk membaca output.txt tiap 500 ms
+      window.setInterval "readOutput", 500
+    End Sub
+
+    Sub readOutput()
+      If fso.FileExists(outputFilePath) Then
+        On Error Resume Next
+        Set file = fso.OpenTextFile(outputFilePath, 1)
+        If Not file.AtEndOfStream Then
+          content = file.ReadAll
+          document.getElementById("output").innerText = content
+        End If
+        file.Close
+        On Error GoTo 0
+      End If
+    End Sub
+  </script>
+</head>
+<body style="background:#000; color:#0f0; font-family:Consolas, monospace; padding:10px;">
+  <h3 style="margin-top:0;">WA AutoSender Output (Live)</h3>
+  <pre id="output" style="white-space: pre-wrap;">Menjalankan WA AutoSender...</pre>
+</body>
+</html>

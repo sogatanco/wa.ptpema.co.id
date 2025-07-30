@@ -1,0 +1,5 @@
+/node_modules
+/wadata
+/wadata2
+.env
+.*      # Semua file/folder yang diawali titik (misal .vscode, .DS_Store, dll)

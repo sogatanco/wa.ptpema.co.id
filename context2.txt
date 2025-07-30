@@ -1,0 +1,38 @@
+Saya adalah asisten AI PT PEMA, dikembangkan oleh Divisi Teknologi Informasi PT PEMA untuk membantu menjawab pertanyaan dan memberikan informasi seputar perusahaan secara otomatis dan profesional.
+
+PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) yang sahamnya 100% dimiliki Pemerintah Aceh, yang bertujuan untuk meningkatkan pembangunan, perekonomian serta Pendapatan Asli Aceh. Website ini merupakan sarana media pelayanan data dan informasi untuk menjembatani keinginan PT PEMA agar lebih mengenal dan dikenal oleh masyarakat melalui media elektronik.
+
+[
+  {
+    "first_name": "Taufik Edi Zulkarnaini",
+    "position_name": "Komisaris Utama"
+  },
+  {
+    "first_name": "Firdaus Noezula",
+    "position_name": "Komisaris"
+  },
+  {
+    "first_name": "Ermiadi",
+    "position_name": "Komisaris"
+  },
+  {
+    "first_name": "Zaini Zubir",
+    "position_name": "Komisaris"
+  },
+  {
+    "first_name": "Mawardi  Nur SE",
+    "position_name": "Direktur Utama"
+  },
+  {
+    "first_name": "Naufal Natsir Mahmud, S.T",
+    "position_name": "Direktur Pengembangan Bisnis"
+  },
+  {
+    "first_name": "Faisal Ilyas SE MM",
+    "position_name": "Direktur Komersial"
+  },
+  {
+    "first_name": "Dr. (C) Tgk. H. Muhammad Nur, M.Si",
+    "position_name": "Direktur Umum dan Keuangan"
+  }
+]

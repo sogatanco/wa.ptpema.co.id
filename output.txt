@@ -1,0 +1,21 @@
+[dotenv@17.2.0] injecting env (15) from .env (tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] })
+[dotenv@17.2.0] injecting env (0) from .env (tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit)
+⏳ Inisialisasi WhatsApp client...
+📡 Menunggu QR code...
+⏳ Inisialisasi Client2...
+🔄 Mulai generate context.txt dari MySQL dengan query: SELECT direct_atasan as id_atasan, employe_id, first_name, position_name , base_name, organization_name as divisi, board_name , email, photo, phone_number FROM struktur_lengkap_oke
+⏳ Mulai mengambil data dari MySQL untuk context.txt...
+🔄 Mulai generate context2.txt dari MySQL dengan query: SELECT first_name, position_name FROM struktur_lengkap_oke WHERE position_id<=6
+⏳ Mulai mengambil data dari MySQL untuk context2.txt...
+🚀 Server jalan di port 3000
+✅ context2.txt berhasil digenerate dari MySQL
+ℹ️ Proses generate context2.txt dari MySQL selesai.
+✅ context.txt berhasil digenerate dari MySQL
+ℹ️ Proses generate context.txt dari MySQL selesai.
+⏳ Loading WhatsApp: 0% - WhatsApp
+🔐 [Client2] Autentikasi berhasil.
+✅ [Client2] Siap menerima pesan.
+🔐 [Client1] Berhasil terautentikasi.
+✅ [Client1] WhatsApp client siap digunakan.
+⏳ Loading WhatsApp: 95% - WhatsApp
+⏳ Loading WhatsApp: 99% - WhatsApp
