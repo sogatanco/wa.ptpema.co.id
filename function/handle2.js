@@ -1,6 +1,5 @@
 import { askGeminiFlash } from './askGeminiFlash.js';
 import { askGeminiFlashWithoutContext } from './askGeminiFlashWithoutContext.js';
-import pkg from 'whatsapp-web.js';
 import {
     loadNomorTerdaftar as loadNomorTerdaftarUtil,
     getUserFromContext,
@@ -15,8 +14,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 import path from 'path';
-import PDFDocument from 'pdfkit'; // Tambahkan import PDFKit
-const { MessageMedia } =pkg;// Tambahkan import MessageMedia
 
 
 dayjs.extend(utc);
@@ -133,16 +130,15 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
     //     try {
     //         // Get SID
     //         const loginRes = await axios.get(`${synoUrl}/auth.cgi`, {
-    //             params:
-    //                 {
-    //                     api: 'SYNO.API.Auth',
-    //                     version: 6,
-    //                     method: 'login',
-    //                     account,
-    //                     passwd,
-    //                     session: 'FileStation',
-    //                     format: 'sid'
-    //                 },
+    //             params: {
+    //                 api: 'SYNO.API.Auth',
+    //                 version: 6,
+    //                 method: 'login',
+    //                 account,
+    //                 passwd,
+    //                 session: 'FileStation',
+    //                 format: 'sid'
+    //             },
     //             httpsAgent: new (require('https').Agent)({ rejectUnauthorized: false })
     //         });
     //         const sid = loginRes.data && loginRes.data.data && loginRes.data.data.sid;
@@ -215,8 +211,7 @@ export async function handleIncomingMessage(msg, { client, GEMINI_API_KEY, greet
                 // Hapus file dan folder temp user setelah upload sukses
                 try {
                     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-                    // Replace deprecated rmdirSync with rmSync
-                    if (fs.existsSync(folder)) fs.rmSync(folder, { recursive: true, force: true });
+                    if (fs.existsSync(folder)) fs.rmdirSync(folder, { recursive: true });
                 } catch (e) {
                     // ignore error
                 }
@@ -897,16 +892,16 @@ Ketik angka sesuai pilihan.`;
                 }
                 // Tampilkan submenu setelah hapus booking
                 let submenuMsg =
-                    `*ZOOM MEETING*\n` +
-                    `1. Zoom meeting yang akan datang\n` +
-                    `2. Buat link Zoom\n` +
-                    `3. Cancel Zoom meeting\n` +
+                    `*BOOKING RUANG RAPAT*\n` +
+                    `1. List rapat yang akan datang\n` +
+                    `2. Booking ruang rapat\n` +
+                    `3. Cancel booking rapat\n` +
                     `9. Kembali ke menu utama\n` +
                     `0. Keluar menu\n` +
                     `Ketik angka sesuai pilihan.`;
                 await new Promise(res => setTimeout(res, 2000));
                 await msg.reply(submenuMsg);
-                userMenuState.set(from, 'zoom');
+                userMenuState.set(from, 'booking');
                 userBookingData.delete(from);
                 return;
             } else if (text.toLowerCase() === 'n' || text.toLowerCase() === 'tidak') {
@@ -975,7 +970,7 @@ Ketik angka sesuai pilihan.`;
             `1. List rapat yang akan datang\n` +
             `2. Booking ruang rapat\n` +
             `3. Cancel booking rapat\n` +
-            `9. Kembali to main menu\n` +
+            `9. Kembali ke menu utama\n` +
             `0. Keluar menu\n` +
             `Ketik angka sesuai pilihan.`;
 
@@ -1375,7 +1370,7 @@ Ketik angka sesuai pilihan.`;
 
                 let konsumsiMsg = '';
                 if (booking.butuh_konsumsi) {
-                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}\n\n  Dimohon untuk mencetak pada kertas A6 atau kertas A4 setengah halaman dan menandatangani formulir permintaan konsumsi terlampir, kemudian menyerahkannya kepada ${PIC_KONSUMSI} / ${nomorTo08(KONSUMSI_NUMBER)} atau kepada staf umum yang bertanggung jawab.`;
+                    konsumsiMsg = `Konsumsi: ${booking.konsumsi_detail}\n\n  Silakan jumpai ${PIC_KONSUMSI} / ${nomorTo08(KONSUMSI_NUMBER)} untuk mengisi form permintaan konsumsi.`;
                 } else {
                     konsumsiMsg = 'Konsumsi: Tidak';
                 }
@@ -1385,7 +1380,7 @@ Ketik angka sesuai pilihan.`;
                         `Butuh link Zoom Meeting: Ya\n` +
                         `🔗 Link: ${zoomInfo.join_url}\n` +
                         `🆔 ID Meeting: ${zoomInfo.personal_meeting_id || zoomInfo.id || '-'}\n` +
-                        `🔑 Password: ${zoomInfo.password || '-'}`;
+                        `🔑 Password: ${zoomInfo.password || '-'}\n`;
                 } else if (booking.butuh_zoom) {
                     zoomMsg = 'Butuh link Zoom Meeting: Ya (tidak tersedia karena konflik jadwal)';
                 } else {
@@ -1395,110 +1390,33 @@ Ketik angka sesuai pilihan.`;
                 await msg.reply(
                     `Booking ruang rapat berhasil!\nTanggal: ${booking.tanggal}\nJam: ${booking.jam} - ${booking.jam_selesai}\nAgenda: ${booking.agenda}\nRuang: ${booking.ruang}\n${zoomMsg}${konsumsiMsg}\n\nUntuk jadwal rapat hari ini dapat dilihat di https://app.ptpema.co.id/jadwal-rapat`
                 );
-
-                // === PDF GENERATION & SEND ===
-                if (booking.butuh_konsumsi) {
-                    // Generate PDF
-                    const tempFolder = path.resolve(process.cwd(), 'temp', from.replace(/[^a-zA-Z0-9]/g, '_'));
-                    if (!fs.existsSync(tempFolder)) fs.mkdirSync(tempFolder, { recursive: true });
-                    const pdfFile = path.join(tempFolder, `booking_konsumsi_${Date.now()}.pdf`);
-                    const doc = new PDFDocument({ size: 'A6', layout: 'portrait', margin: 20 });
-                    const pdfStream = fs.createWriteStream(pdfFile);
-                    doc.pipe(pdfStream);
-
-                    // Header gambar full lebar kertas, tinggi fix agar selalu tampil
-                    let imgHeight = 32;
+                // Notifikasi ke IT jika ada link Zoom
+                if (booking.butuh_zoom && zoomInfo) {
+                    let notifSent = false;
+                    let notifError = '';
                     try {
-                        const imgPath = path.resolve(process.cwd(), 'public', 'head.png');
-                        if (fs.existsSync(imgPath)) {
-                            const imgWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-                            doc.image(imgPath, doc.page.margins.left, doc.page.margins.top, { width: imgWidth, height: imgHeight });
-                        }
+                        const notifMsg =
+                            `Jadwal Zoom baru telah dibuat oleh ${nomorTo08(from)}\n` +
+                            `Agenda: ${booking.agenda}\n` +
+                            `Tanggal: ${booking.tanggal}\n` +
+                            `Jam: ${booking.jam} - ${booking.jam_selesai}\n` +
+                            `Ruang: ${booking.ruang}\n` +
+                            `🔗 Link: ${zoomInfo.join_url}\n` +
+                            `🆔 ID Meeting: ${zoomInfo.personal_meeting_id || zoomInfo.id || '-'}\n` +
+                            `🔑 Password: ${zoomInfo.password || '-'}`;
+                        await client.sendMessage(IT_NUMBER, notifMsg);
+                        notifSent = true;
                     } catch (e) {
-                        // ignore jika gambar tidak ada
+                        notifError = e && e.message ? e.message : String(e);
+                        console.error('❌ Gagal kirim notif ke IT:', notifError);
                     }
-
-                    // Geser y setelah gambar header
-                    doc.y = doc.page.margins.top + imgHeight + 8;
-
-                    // Judul
-                    doc.font('Helvetica-Bold').fontSize(9).text('Form Permintaan konsumsi', { align: 'center' });
-                    doc.moveDown(1);
-
-                    // Detail permintaan konsumsi: lebar kertas dibagi 40% dan 60%
-                    doc.font('Helvetica').fontSize(6);
-                    const tableStartX = doc.page.margins.left;
-                    const tableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-                    const labelWidth = Math.floor(tableWidth * 0.3);
-                    const valueWidth = tableWidth - labelWidth -10;
-                    const labelX = tableStartX;
-                    const valueX = labelWidth + 10;
-
-                    const rows = [
-                        ['Nama Pemohon', pic_name],
-                        ['Tgl Rapat', booking.tanggal],
-                        ['Jam', `${booking.jam} - ${booking.jam_selesai}`],
-                        ['Ruang', booking.ruang],
-                        ['Konsumsi', booking.konsumsi_detail]
-                    ];
-
-                    let y = doc.y;
-                    rows.forEach(([label, value]) => {
-                        doc.text(label, labelX, y, { width: labelWidth, align: 'left'});
-                        doc.text(value, valueX, y, { width: valueWidth , align: 'left' });
-                        y = doc.y + 2; // tambahkan sedikit tinggi baris
-                    });
-
-                    doc.moveDown(3);
-
-                    // NB
-                    doc.font('Helvetica-Bold').fontSize(6).text('NB :', doc.page.margins.left, doc.y, { align: 'left', continued: true });
-                    doc.font('Helvetica').fontSize(6).text(' Mohon setiap selesai rapat atau kegiatan, dilampirkan foto sebagai dokumentasi. Permintaan konsumsi yang tidak disertai foto dokumentasi, biayanya akan menjadi tanggung jawab pemohon.');
-                    doc.moveDown(3);
-
-                    // Tanda tangan, rapi dan tidak keluar kertas
-                    const signColWidth = Math.floor((tableWidth - 20) / 2); // 20px padding antar kolom
-                    const leftX = tableStartX;
-                    const rightX = tableStartX + signColWidth + 20;
-                    const signY = doc.y;
-
-                    doc.font('Helvetica').fontSize(6);
-                    doc.text('Pemohon,', leftX, signY, { width: signColWidth, align: 'center' });    
-                    doc.text('Disetujui oleh,', rightX, signY, { width: signColWidth, align: 'center' });
-
-                    doc.moveDown(4);
-
-                    // Inline tanda tangan
-
-                    let u=doc.y
-                    doc.text(`${pic_name}`, leftX, u, { width: signColWidth, align: 'center', underline: true });
-                    doc.text('                   ', rightX, u, { width: signColWidth, align: 'center', underline: true });
-
-
-                    doc.end();
-
-                    // Tunggu file PDF selesai ditulis sebelum kirim
-                    await new Promise((resolve, reject) => {
-                        pdfStream.on('finish', resolve);
-                        pdfStream.on('error', reject);
-                    });
-
-                    // Kirim PDF ke user
-                    try {
-                        const mediaBuffer = fs.readFileSync(pdfFile);
-                        const mediaBase64 = mediaBuffer.toString('base64');
-                        const media = new MessageMedia('application/pdf', mediaBase64, 'Bukti_Booking_Konsumsi.pdf');
-                        await client.sendMessage(from, media);
-                    } catch (e) {
-                        console.error('❌ Gagal kirim PDF konsumsi ke user:', e.message);
+                    if (!notifSent) {
+                        await msg.reply('⚠️ Notifikasi ke nomor IT belum terkirim. Silakan hubungi IT secara manual. Alasan: ' + notifError);
                     }
-                    // Hapus file PDF dan folder temp
+                }
+                // Notifikasi ke konsumsi jika butuh konsumsi
+                if (booking.butuh_konsumsi && booking.konsumsi_detail) {
                     try {
-                        if (fs.existsSync(pdfFile)) fs.unlinkSync(pdfFile);
-                        if (fs.existsSync(tempFolder)) fs.rmSync(tempFolder, { recursive: true, force: true });
-                    } catch (e) { }
-                    // kirim notif ke pic konsumsi
-                     try {
                         const notifKonsumsi =
                             `Permintaan konsumsi baru dari ${nomorTo08(from)} (${pic_name}):\n` +
                             `Tanggal: ${booking.tanggal}\n` +
@@ -1560,9 +1478,7 @@ Ketik angka sesuai pilihan.`;
     console.log(`📋 Nomor ${nomorVariasi} terdaftar: ${isTerdaftar}`);
 
     // Deteksi perintah zoom meeting lebih luas (bisa bahasa Inggris/campuran)
-   
     const isZoomPrompt =
-       
         /^buat (zoom )?meeting\b/.test(text) ||
         (text.includes('zoom') && text.includes('meeting')) ||
         /create.*zoom.*meeting/i.test(text) ||
@@ -1571,12 +1487,9 @@ Ketik angka sesuai pilihan.`;
     if (isTerdaftar && isZoomPrompt) {
         await handleZoomMeeting({ msg, nomor, GEMINI_API_KEY });
         return;
-          }
+    }
 
     // Pilih context file sesuai status nomor pengirim
-
-
-
     let contextFile = isTerdaftar ? 'context.txt' : 'context2.txt';
 
     // Jika pertanyaan tentang "siapa saya", "siapa aku", "who am i", atau "kamu kenal sama aku", tambahkan instruksi dan nomor pengirim ke prompt
@@ -1606,4 +1519,3 @@ Ketik angka sesuai pilihan.`;
     greetedNumbers.add(from);
     chatHistory.set(from, { question: text, answer: response });
 }
-

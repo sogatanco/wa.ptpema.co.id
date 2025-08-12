@@ -161,6 +161,18 @@ PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) 
   },
   {
     "id_atasan": "013",
+    "employe_id": "202508121K",
+    "first_name": "Zipoginovik Mohamad",
+    "position_name": "Manajer Umum",
+    "base_name": "Manajer",
+    "divisi": "Divisi Umum",
+    "board_name": "Direktorat Umum dan Keuangan",
+    "email": "zipoginovik@pema.co.id",
+    "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/9veWOWK3mqr0ENkxELIaCiqv5irlTxqKP7Xg5GEl.jpg",
+    "phone_number": "6285215310948"
+  },
+  {
+    "id_atasan": "202508121K",
     "employe_id": "202202047K",
     "first_name": "Aulia Rahmat",
     "position_name": "Supervisor Umum",
@@ -403,7 +415,7 @@ PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) 
     "id_atasan": "013",
     "employe_id": "202208044K",
     "first_name": "MHD Nizar",
-    "position_name": "Staf Umum / PS. Manajer Umum",
+    "position_name": "Staf Umum/Ps. Manajer Umum",
     "base_name": "Manajer",
     "divisi": "Divisi Umum",
     "board_name": "Direktorat Umum dan Keuangan",
@@ -1001,6 +1013,30 @@ PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) 
   },
   {
     "id_atasan": "202110041",
+    "employe_id": "202401038P",
+    "first_name": "Tasya Rizka Zulvia",
+    "position_name": "Staf Pemasaran",
+    "base_name": "Staf",
+    "divisi": "Divisi Pemasaran",
+    "board_name": "Direktorat Komersial",
+    "email": "tasya.rizka@pema.co.id",
+    "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/e4rEvoxKLj7RU659tjaLDBsrGMxD7KrmWbvPVEhj.jpg",
+    "phone_number": "6285362636310"
+  },
+  {
+    "id_atasan": "202110041",
+    "employe_id": "32523632",
+    "first_name": "Sitti Zahwa Lourentza Chasman",
+    "position_name": "Staf Pemasaran",
+    "base_name": "Staf",
+    "divisi": "Divisi Pemasaran",
+    "board_name": "Direktorat Komersial",
+    "email": "sittizahwa0707@gmail.com",
+    "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/MrsOUPUhndf8zaAimtPmmHnW2H8zsiICNS0iyFKP.jpg",
+    "phone_number": "6285277227881"
+  },
+  {
+    "id_atasan": "202110041",
     "employe_id": "202309036P",
     "first_name": "Rian Ananda",
     "position_name": "Staf SCM",
@@ -1253,18 +1289,6 @@ PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) 
   },
   {
     "id_atasan": "202104030",
-    "employe_id": "202401038P",
-    "first_name": "Tasya Rizka Zulvia",
-    "position_name": "Staf Hubungan Masyarakat",
-    "base_name": "Staf",
-    "divisi": "Sekretariat Perusahaan",
-    "board_name": "Sekretariat Perusahaan",
-    "email": "tasya.rizka@pema.co.id",
-    "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/e4rEvoxKLj7RU659tjaLDBsrGMxD7KrmWbvPVEhj.jpg",
-    "phone_number": "6285362636310"
-  },
-  {
-    "id_atasan": "202104030",
     "employe_id": "202502046P",
     "first_name": "Anugerah Fajar",
     "position_name": "Staf Hubungan Masyarakat",
@@ -1358,6 +1382,18 @@ PT. Pembangunan Aceh (PEMA) merupakan Badan Usaha Milik Daerah Aceh (BUMD/BUMA) 
     "email": "abrar@pema.co.id",
     "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/rv9A04Ikq1sqSIYbsJWDf5TqYcAYoKcd4FQD9z4x.png",
     "phone_number": null
+  },
+  {
+    "id_atasan": "202104030",
+    "employe_id": "202508122K",
+    "first_name": "Remy Hastian Putra Muhamad P",
+    "position_name": "ADC Direktur Utama",
+    "base_name": "Staf",
+    "divisi": "Sekretariat Perusahaan",
+    "board_name": "Sekretariat Perusahaan",
+    "email": "remy@pema.co.id",
+    "photo": "https://hr-api.ptpema.co.id/storage/photo/employee-photo/XNOu9Pz47GBAIgzXfuiTvkZn9AODZRq9BEhDSKzK.jpg",
+    "phone_number": "6285841464337"
   },
   {
     "id_atasan": "0001",
